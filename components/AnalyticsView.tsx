@@ -4,6 +4,137 @@ import { useState, useEffect } from "react";
 import { useHabits } from "@/contexts/HabitContext";
 import { formatDateToString, getMonthWeeks } from "@/utils/dateUtils";
 
+// Ultra-thin Line Graph with hover tooltips
+function ThinLineGraph({ data, color = "#4f46e5", label = "Value" }: { data: { value: number; label: string }[]; color?: string; label?: string }) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  if (data.length === 0) return null;
+
+  const values = data.map(d => d.value);
+  const max = Math.max(...values, 1);
+  const min = 0;
+  const range = max - min || 1;
+
+  const points = values.map((value, index) => ({
+    x: (index / (values.length - 1)) * 100,
+    y: 100 - ((value - min) / range) * 100,
+    value,
+    label: data[index].label
+  }));
+
+  const pathPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+
+  return (
+    <div className="w-full h-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-6 relative">
+      <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+        {/* Grid lines */}
+        <line x1="0" y1="0" x2="0" y2="100" stroke="currentColor" strokeWidth="0.3" className="text-gray-400 dark:text-gray-600" />
+        <line x1="0" y1="100" x2="100" y2="100" stroke="currentColor" strokeWidth="0.3" className="text-gray-400 dark:text-gray-600" />
+
+        {[0, 25, 50, 75, 100].map(y => (
+          <line
+            key={y}
+            x1="0"
+            y1={y}
+            x2="100"
+            y2={y}
+            stroke="currentColor"
+            strokeWidth="0.1"
+            className="text-gray-300 dark:text-gray-700"
+          />
+        ))}
+
+        {/* Ultra-thin data line */}
+        <polyline
+          points={pathPoints}
+          fill="none"
+          stroke={color}
+          strokeWidth="0.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Invisible hover areas */}
+        {points.map((point, index) => (
+          <circle
+            key={index}
+            cx={point.x}
+            cy={point.y}
+            r="3"
+            fill="transparent"
+            className="cursor-pointer"
+            onMouseEnter={() => setHoveredIndex(index)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          />
+        ))}
+
+        {/* Visible points only on hover */}
+        {points.map((point, index) => (
+          <circle
+            key={`point-${index}`}
+            cx={point.x}
+            cy={point.y}
+            r="1.5"
+            fill={hoveredIndex === index ? color : "transparent"}
+            className="transition-all pointer-events-none"
+          />
+        ))}
+      </svg>
+
+      {/* Tooltip */}
+      {hoveredIndex !== null && (
+        <div
+          className="absolute bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2 rounded text-sm font-medium shadow-lg pointer-events-none"
+          style={{
+            left: `${points[hoveredIndex].x}%`,
+            top: `${points[hoveredIndex].y}%`,
+            transform: 'translate(-50%, -120%)'
+          }}
+        >
+          <div>{points[hoveredIndex].label}</div>
+          <div className="font-bold">{label}: {points[hoveredIndex].value.toFixed(1)}</div>
+        </div>
+      )}
+
+      {/* Axis labels */}
+      <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-600 dark:text-gray-400 -ml-8 py-6">
+        <span>{max}</span>
+        <span>{Math.round(max / 2)}</span>
+        <span>0</span>
+      </div>
+    </div>
+  );
+}
+
+// Simple Bar Chart
+function SimpleBarChart({ data, labels }: { data: number[]; labels: string[] }) {
+  if (data.length === 0) return null;
+
+  const max = Math.max(...data, 1);
+
+  return (
+    <div className="w-full h-48 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-4">
+      <div className="flex items-end justify-between gap-2 h-full">
+        {data.map((value, index) => {
+          const height = max > 0 ? (value / max) * 100 : 0;
+          return (
+            <div key={index} className="flex-1 flex flex-col items-center">
+              <div className="w-full relative flex items-end" style={{ height: '85%' }}>
+                <div
+                  className="w-full bg-indigo-500 dark:bg-indigo-600"
+                  style={{ height: `${height}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-2">{labels[index]}</div>
+              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">{value}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function AnalyticsView() {
   const { habits, isHabitCompleted, getCounter, getHabitStats } = useHabits();
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
@@ -23,277 +154,148 @@ export default function AnalyticsView() {
 
   if (habits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-        <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-full mb-4">
-           <span className="text-4xl">📊</span>
-        </div>
-        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">No Analytics Yet</h3>
-        <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Start tracking your habits to see detailed insights here.</p>
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <div className="text-6xl mb-4">📊</div>
+        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">No Data Yet</h3>
+        <p className="text-gray-600 dark:text-gray-400">Start tracking habits to see analytics</p>
       </div>
     );
   }
 
+  // Calculate overall daily progress
+  const overallDailyProgress = allDates.map(date => {
+    const dateStr = formatDateToString(date);
+    const completedCount = habits.filter(h => {
+      if (h.trackingType === 'checkbox') {
+        return isHabitCompleted(h.id, dateStr);
+      } else {
+        return getCounter(h.id, dateStr) > 0;
+      }
+    }).length;
+    const percentage = habits.length > 0 ? (completedCount / habits.length) * 100 : 0;
+    return {
+      value: percentage,
+      label: dateStr
+    };
+  });
+
+  const totalCompletions = habits.reduce((sum, habit) => {
+    const stats = getHabitStats(habit.id);
+    return sum + stats.completedDays;
+  }, 0);
+
+  const avgCompletionRate = habits.length > 0
+    ? Math.round(
+      habits.reduce((sum, h) => {
+        const stats = getHabitStats(h.id);
+        return sum + stats.completionRate;
+      }, 0) / habits.length
+    )
+    : 0;
+
+  const longestStreak = Math.max(...habits.map(h => getHabitStats(h.id).longestStreak), 0);
+
   return (
-    <div className="h-full overflow-auto p-4 lg:p-6 space-y-8 custom-scrollbar">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Performance Overview</h2>
-        <p className="text-gray-500 dark:text-gray-400">Track your progress and consistency over time.</p>
-      </div>
-
-      {/* Overall Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Total Habits</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">{habits.length}</div>
-            <span className="text-xs text-green-500 font-medium">Active</span>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Avg Completion</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-              {habits.length > 0
-                ? Math.round(
-                    habits.reduce((sum, h) => {
-                      const stats = getHabitStats(h.id);
-                      return sum + stats.completionRate;
-                    }, 0) / habits.length
-                  )
-                : 0}%
-            </div>
-          </div>
+    <div className="h-full overflow-auto bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics</h2>
+          <p className="text-gray-600 dark:text-gray-400">Performance metrics and trends</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Active Days</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">{allDates.length}</div>
-            <span className="text-xs text-gray-500">Days recorded</span>
+        {/* Overall Progress Graph */}
+        <div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Overall Daily Progress</h3>
+          <ThinLineGraph data={overallDailyProgress} color="#4f46e5" label="Completion" />
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            Shows the percentage of habits completed each day
+          </p>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Average Completion</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{avgCompletionRate}%</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Completed</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalCompletions}</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Best Streak</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{longestStreak} days</div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Best Streak</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-3xl font-bold text-orange-500 dark:text-orange-400">
-              {Math.max(...habits.map(h => getHabitStats(h.id).longestStreak), 0)}
-            </div>
-            <span className="text-xl">🔥</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Per Habit Detailed Analytics */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Detailed Breakdown</h3>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {habits.map(habit => {
+        {/* Per Habit - Counter habits only */}
+        {habits.filter(h => h.trackingType === "counter").map(habit => {
           const stats = getHabitStats(habit.id);
 
-          if (habit.trackingType === "checkbox") {
-            // Get daily completion data for the month
-            const dailyData = allDates.map(date => ({
-              date,
-              completed: isHabitCompleted(habit.id, formatDateToString(date))
-            }));
+          // Daily counter data
+          const dailyData = allDates.map(date => ({
+            value: getCounter(habit.id, formatDateToString(date)),
+            label: formatDateToString(date)
+          }));
 
-            // Weekly aggregation
-            const weeks = monthWeeks.map((week, idx) => {
-              const weekDates = week.filter(d => d <= today);
-              const completed = weekDates.filter(d =>
-                isHabitCompleted(habit.id, formatDateToString(d))
-              ).length;
-              const total = weekDates.length;
-              return {
-                week: idx + 1,
-                completed,
-                total,
-                percentage: total > 0 ? (completed / total) * 100 : 0
-              };
-            });
+          const totalCount = dailyData.reduce((sum, d) => sum + d.value, 0);
+          const avgPerDay = allDates.length > 0 ? (totalCount / allDates.length).toFixed(1) : '0';
+          const maxCount = Math.max(...dailyData.map(d => d.value), 1);
 
-            return (
-              <div key={habit.id} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-2xl">
-                      {habit.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg">{habit.name}</h3>
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full inline-block mt-1">
-                        Checkbox
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{Math.round(stats.completionRate)}%</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</div>
+          const weeklyData = monthWeeks.map(week => {
+            const weekDates = week.filter(d => d <= today);
+            return weekDates.reduce((sum, d) =>
+              sum + getCounter(habit.id, formatDateToString(d)), 0
+            );
+          });
+
+          const weekLabels = monthWeeks.map((_, idx) => `W${idx + 1}`);
+
+          return (
+            <div key={habit.id} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{habit.icon}</span>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{habit.name}</h3>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Counter</span>
                   </div>
                 </div>
-
-                {/* Key Metrics Grid */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Done</div>
-                    <div className="text-lg font-bold text-gray-800 dark:text-white">{stats.completedDays}</div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Streak</div>
-                    <div className="text-lg font-bold text-orange-500">{stats.currentStreak} 🔥</div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Best Streak</div>
-                    <div className="text-lg font-bold text-purple-500">{stats.longestStreak} ⚡</div>
-                  </div>
-                </div>
-
-                {/* Weekly Bar Chart */}
-                <div className="mb-6">
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Weekly Progress</h4>
-                  <div className="flex items-end justify-between gap-3 h-32">
-                    {weeks.map(week => (
-                      <div key={week.week} className="flex-1 flex flex-col items-center group">
-                         <div className="relative w-full bg-gray-100 dark:bg-gray-700 rounded-t-lg overflow-hidden" style={{ height: '100%' }}>
-                          <div
-                            className="absolute bottom-0 w-full bg-indigo-500 dark:bg-indigo-600 transition-all duration-500 group-hover:bg-indigo-600 dark:group-hover:bg-indigo-500"
-                            style={{
-                              height: `${week.percentage}%`
-                            }}
-                          />
-                        </div>
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-2">W{week.week}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Activity Heatmap */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Recent Activity</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {dailyData.slice(-28).map((day, idx) => ( // Show last 4 weeks approx
-                      <div
-                        key={idx}
-                        className={`w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-medium transition-colors ${
-                            day.completed 
-                            ? "bg-indigo-500 text-white shadow-sm" 
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
-                        }`}
-                        title={formatDateToString(day.date)}
-                      >
-                        {day.date.getDate()}
-                      </div>
-                    ))}
-                  </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
                 </div>
               </div>
-            );
-          } else {
-            // Counter habit analytics
-            const dailyData = allDates.map(date => ({
-              date,
-              count: getCounter(habit.id, formatDateToString(date))
-            }));
 
-            const totalCount = dailyData.reduce((sum, d) => sum + d.count, 0);
-            const avgPerDay = allDates.length > 0 ? (totalCount / allDates.length).toFixed(1) : '0';
-            const maxCount = Math.max(...dailyData.map(d => d.count), 1);
-            // const daysWithActivity = dailyData.filter(d => d.count > 0).length;
-
-            // Weekly aggregation
-            const weeks = monthWeeks.map((week, idx) => {
-              const weekDates = week.filter(d => d <= today);
-              const total = weekDates.reduce((sum, d) =>
-                sum + getCounter(habit.id, formatDateToString(d)), 0
-              );
-              return {
-                week: idx + 1,
-                total,
-                avg: weekDates.length > 0 ? (total / weekDates.length).toFixed(1) : '0'
-              };
-            });
-
-            const maxWeekTotal = Math.max(...weeks.map(w => w.total), 1);
-            
-            return (
-              <div key={habit.id} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-2xl">
-                      {habit.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg">{habit.name}</h3>
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full inline-block mt-1">
-                        Counter
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{totalCount}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Total Count</div>
-                  </div>
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Daily Average</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{avgPerDay}</div>
                 </div>
-
-                {/* Key Metrics Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Average</div>
-                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{avgPerDay}</div>
-                  </div>
-                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Peak Day</div>
-                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{maxCount}</div>
-                  </div>
-                </div>
-
-                {/* Weekly Bar Chart */}
-                <div className="mb-6">
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Weekly Volume</h4>
-                  <div className="flex items-end justify-between gap-3 h-32">
-                    {weeks.map(week => (
-                      <div key={week.week} className="flex-1 flex flex-col items-center group">
-                        <div className="relative w-full bg-gray-100 dark:bg-gray-700 rounded-t-lg overflow-hidden" style={{ height: '100%' }}>
-                          <div
-                            className="absolute bottom-0 w-full bg-indigo-500 dark:bg-indigo-600 transition-all duration-500 group-hover:bg-indigo-600 dark:group-hover:bg-indigo-500"
-                            style={{
-                              height: `${(week.total / maxWeekTotal) * 100}%`
-                            }}
-                          />
-                        </div>
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-2">W{week.week}</div>
-                         <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 absolute -mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {week.total}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Daily Trend */}
-                <div>
-                   <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Daily Trend</h4>
-                   <div className="flex items-end gap-1 h-24 overflow-x-auto custom-scrollbar pb-2">
-                      {dailyData.map((day, idx) => (
-                        <div key={idx} className="flex-shrink-0 flex flex-col items-center w-5 group">
-                           <div className="w-3 bg-gray-100 dark:bg-gray-700 rounded-t-sm relative" style={{ height: '100%' }}>
-                              <div 
-                                className={`w-full absolute bottom-0 rounded-t-sm transition-all ${day.count > 0 ? 'bg-indigo-400 dark:bg-indigo-500' : 'bg-transparent'}`}
-                                style={{ height: `${(day.count / maxCount) * 100}%` }}
-                              />
-                           </div>
-                        </div>
-                      ))}
-                   </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Peak Day</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{maxCount}</div>
                 </div>
               </div>
-            );
-          }
+
+              {/* Charts */}
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Daily Volume</h4>
+                  <ThinLineGraph data={dailyData} color="#10b981" label="Count" />
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Weekly Total</h4>
+                  <SimpleBarChart data={weeklyData} labels={weekLabels} />
+                </div>
+              </div>
+            </div>
+          );
         })}
-        </div>
       </div>
     </div>
   );

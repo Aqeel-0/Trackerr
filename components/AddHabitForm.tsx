@@ -35,6 +35,7 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
   const [trackingType, setTrackingType] = useState<TrackingType>("checkbox");
   const [showPresets, setShowPresets] = useState(true);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [presetLoaded, setPresetLoaded] = useState(false);
 
   const capitalizeFirstLetter = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -56,7 +57,8 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
       setName("");
       setIcon("🎯");
       setTrackingType("checkbox");
-      
+      setPresetLoaded(false);
+
       if (onSuccess) {
         onSuccess();
       }
@@ -64,17 +66,15 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
   };
 
   const handlePresetSelect = (preset: typeof PRESET_HABITS[0]) => {
-    addHabit({
-      name: preset.name,
-      description: preset.description,
-      color: preset.color,
-      icon: preset.icon,
-      trackingType: preset.trackingType,
-    });
-    
-    if (onSuccess) {
-      onSuccess();
-    }
+    setName(preset.name);
+    setIcon(preset.icon);
+    setTrackingType(preset.trackingType);
+    setPresetLoaded(true);
+
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setPresetLoaded(false);
+    }, 3000);
   };
 
   return (
@@ -129,6 +129,13 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Success Notification */}
+        {presetLoaded && (
+          <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center animate-fade-in-down mb-4">
+            ✨ Preset loaded! Customize if needed.
+          </div>
+        )}
+
         {/* Icon Picker */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -189,11 +196,10 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
             <button
               type="button"
               onClick={() => setTrackingType("checkbox")}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-                trackingType === "checkbox"
-                  ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
-              }`}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${trackingType === "checkbox"
+                ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
+                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
             >
               <span className="font-semibold text-sm">✓ Checkbox</span>
               <span className="text-xs opacity-70 mt-1">Yes/No Completion</span>
@@ -201,11 +207,10 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
             <button
               type="button"
               onClick={() => setTrackingType("counter")}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-                trackingType === "counter"
-                  ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
-              }`}
+              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${trackingType === "counter"
+                ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
+                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
             >
               <span className="font-semibold text-sm"># Counter</span>
               <span className="text-xs opacity-70 mt-1">Track Quantity</span>

@@ -33,4 +33,5 @@ export interface HabitContextType {
     longestStreak: number;
     completionRate: number;
   };
+  reorderHabits: (newOrder: Habit[]) => void;
 }

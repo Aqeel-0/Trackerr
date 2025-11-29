@@ -148,3 +148,27 @@ export function calculateStreak(completionDates: string[], endDate: Date): numbe
 
   return streak;
 }
+
+/**
+ * Get the current week (7 days starting from Monday)
+ */
+export function getCurrentWeek(): Date[] {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const monday = new Date(today);
+
+  // Calculate days to subtract to get to Monday
+  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  monday.setDate(today.getDate() - daysToMonday);
+
+  // Get 7 days starting from Monday
+  const week: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    week.push(date);
+  }
+
+  return week;
+}
+

@@ -216,6 +216,10 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     [habits, completions]
   );
 
+  const reorderHabits = useCallback((newOrder: Habit[]) => {
+    setHabits(newOrder);
+  }, []);
+
   const value: HabitContextType = {
     habits,
     completions,
@@ -226,6 +230,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     getCounter,
     isHabitCompleted,
     getHabitStats,
+    reorderHabits,
   };
 
   return (
