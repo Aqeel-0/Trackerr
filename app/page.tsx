@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import AddHabitForm from "@/components/AddHabitForm";
 import MonthlyView from "@/components/MonthlyView";
-import AnalyticsView from "@/components/AnalyticsView";
 import Sidebar from "@/components/Sidebar";
 import Modal from "@/components/Modal";
+
+const AnalyticsView = dynamic(() => import("@/components/AnalyticsView"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex items-center justify-center">
+      <div className="animate-pulse text-gray-400">Loading analytics...</div>
+    </div>
+  ),
+});
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<"tracker" | "analytics">("tracker");
