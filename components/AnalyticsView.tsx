@@ -20,27 +20,27 @@ import { CheckboxStats, CounterStats, Habit } from "@/types/habit";
 
 function StreakDisplay({ current, longest, color }: { current: number; longest: number; color: string }) {
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-4 sm:gap-6">
       <div className="text-center">
         <div className="relative">
           <div
-            className="text-4xl font-bold"
+            className="text-2xl sm:text-4xl font-bold"
             style={{ color }}
           >
             {current}
           </div>
           {current > 0 && (
-            <span className="absolute -top-1 -right-4 text-2xl animate-bounce">🔥</span>
+            <span className="absolute -top-1 -right-3 sm:-right-4 text-lg sm:text-2xl animate-bounce">🔥</span>
           )}
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Current Streak</div>
+        <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">Current Streak</div>
       </div>
       <div className="w-px bg-gray-200 dark:bg-gray-700" />
       <div className="text-center">
-        <div className="text-4xl font-bold text-gray-700 dark:text-gray-300">
+        <div className="text-2xl sm:text-4xl font-bold text-gray-700 dark:text-gray-300">
           {longest}
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center gap-1">
+        <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center gap-1">
           <span>🏆</span> Best Streak
         </div>
       </div>
@@ -58,12 +58,13 @@ function CurrentWeekChart({
   color: string; 
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const today = new Date();
   const currentDayOfWeek = today.getDay();
+  const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
   
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - currentDayOfWeek);
+  weekStart.setDate(today.getDate() - daysFromMonday);
   
   const chartData = days.map((day, index) => {
     const date = new Date(weekStart);
@@ -76,28 +77,28 @@ function CurrentWeekChart({
       value: isFuture ? 0 : (completed ? 100 : 0),
       completed,
       isFuture,
-      isToday: index === currentDayOfWeek,
+      isToday: index === daysFromMonday,
     };
   });
 
   return (
-    <div className="flex justify-between gap-2">
+    <div className="flex justify-between gap-1 sm:gap-2">
       {chartData.map((d, i) => (
         <div key={i} className="flex flex-col items-center flex-1">
           <div 
-            className={`w-full h-16 rounded-lg flex items-center justify-center text-lg font-bold transition-all ${
+            className={`w-full h-10 sm:h-16 rounded-lg flex items-center justify-center text-sm sm:text-lg font-bold transition-all ${
               d.isFuture 
                 ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-300 dark:text-gray-600' 
                 : d.completed 
                   ? 'text-white' 
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-            } ${d.isToday ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-800' : ''}`}
+            } ${d.isToday ? 'ring-2 ring-indigo-500 ring-offset-1 sm:ring-offset-2 dark:ring-offset-gray-800' : ''}`}
             style={{ backgroundColor: d.completed ? color : undefined }}
           >
             {d.isFuture ? '—' : d.completed ? '✓' : '✗'}
           </div>
-          <span className={`text-xs mt-1 ${d.isToday ? 'font-bold text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`}>
-            {d.day}
+          <span className={`text-[10px] sm:text-xs mt-1 ${d.isToday ? 'font-bold text-indigo-600 dark:text-indigo-400' : 'text-gray-500'}`}>
+            {d.day.slice(0, 2)}
           </span>
         </div>
       ))}
@@ -115,13 +116,23 @@ function FourMonthHeatmap({
   color: string; 
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const today = new Date();
-  const fourMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+  const monthsToShow = isMobile ? 2 : 4;
+  const startMonth = new Date(today.getFullYear(), today.getMonth() - (monthsToShow - 1), 1);
   
   const months: { name: string; weeks: { date: string; completed: boolean; isFuture: boolean }[][] }[] = [];
   
-  for (let m = 0; m < 4; m++) {
-    const monthDate = new Date(fourMonthsAgo.getFullYear(), fourMonthsAgo.getMonth() + m, 1);
+  for (let m = 0; m < monthsToShow; m++) {
+    const monthDate = new Date(startMonth.getFullYear(), startMonth.getMonth() + m, 1);
     const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
     const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
     
@@ -147,17 +158,17 @@ function FourMonthHeatmap({
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-4">
+      <div className="flex gap-2 sm:gap-4">
         {months.map((month, mi) => (
           <div key={mi} className="flex-1">
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{month.name}</div>
+            <div className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{month.name}</div>
             <div className="flex gap-0.5">
               {month.weeks.map((week, wi) => (
                 <div key={wi} className="flex flex-col gap-0.5">
                   {week.map((day, di) => (
                     <div
                       key={di}
-                      className="w-3 h-3 rounded-sm"
+                      className="w-2 h-2 sm:w-3 sm:h-3 rounded-sm"
                       style={{
                         backgroundColor: day.isFuture ? '#e5e7eb' : day.completed ? color : 'rgba(156,163,175,0.3)',
                         opacity: day.isFuture ? 0.3 : 1
@@ -185,24 +196,24 @@ function CheckboxHabitCard({
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{habit.icon}</span>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{habit.name}</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="p-3 sm:p-5 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-xl sm:text-2xl">{habit.icon}</span>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{habit.name}</h3>
         </div>
       </div>
 
-      <div className="p-5 space-y-5">
+      <div className="p-3 sm:p-5 space-y-4 sm:space-y-5">
         <StreakDisplay current={stats.currentStreak} longest={stats.longestStreak} color={habit.color} />
 
         <div>
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">This Week</h4>
+          <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">This Week</h4>
           <CurrentWeekChart habitId={habit.id} color={habit.color} isHabitCompleted={isHabitCompleted} />
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Last 4 Months</h4>
+          <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Recent Months</h4>
           <FourMonthHeatmap habitId={habit.id} color={habit.color} isHabitCompleted={isHabitCompleted} />
         </div>
       </div>
@@ -219,7 +230,7 @@ function TrendLineChart({ data, color, unit }: { data: { date: string; count: nu
   const avgValue = data.length > 0 ? data.reduce((s, d) => s + d.count, 0) / data.length : 0;
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={180}>
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id={`counterGradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
@@ -236,9 +247,10 @@ function TrendLineChart({ data, color, unit }: { data: { date: string; count: nu
           interval="preserveStartEnd"
         />
         <YAxis 
-          tick={{ fontSize: 11, fill: '#6b7280' }}
+          tick={{ fontSize: 10, fill: '#6b7280' }}
           axisLine={false}
           tickLine={false}
+          width={30}
         />
         <Tooltip
           formatter={(value: number) => [value, unit || 'Count']}
@@ -248,9 +260,10 @@ function TrendLineChart({ data, color, unit }: { data: { date: string; count: nu
             border: 'none',
             borderRadius: '8px',
             boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+            fontSize: '12px',
           }}
         />
-        <ReferenceLine y={avgValue} stroke="#9ca3af" strokeDasharray="5 5" label={{ value: 'Avg', position: 'right', fill: '#9ca3af', fontSize: 10 }} />
+        <ReferenceLine y={avgValue} stroke="#9ca3af" strokeDasharray="5 5" />
         <Area
           type="monotone"
           dataKey="count"
@@ -280,18 +293,18 @@ function TrendIndicator({ trend, percentage }: { trend: "up" | "down" | "stable"
   };
 
   const labels = {
-    up: "Trending Up",
-    down: "Trending Down",
+    up: "Up",
+    down: "Down",
     stable: "Stable",
   };
 
   return (
     <div className={`flex items-center gap-1 ${colors[trend]}`}>
-      <span className="text-lg font-bold">{icons[trend]}</span>
+      <span className="text-base sm:text-lg font-bold">{icons[trend]}</span>
       <div>
-        <div className="text-sm font-medium">{labels[trend]}</div>
+        <div className="text-xs sm:text-sm font-medium">{labels[trend]}</div>
         {percentage > 0 && trend !== "stable" && (
-          <div className="text-xs opacity-70">{percentage.toFixed(1)}%</div>
+          <div className="text-[10px] sm:text-xs opacity-70">{percentage.toFixed(1)}%</div>
         )}
       </div>
     </div>
@@ -306,35 +319,35 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="p-3 sm:p-5 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{habit.icon}</span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{habit.name}</h3>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="text-xl sm:text-2xl flex-shrink-0">{habit.icon}</span>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{habit.name}</h3>
           </div>
           <TrendIndicator trend={stats.trend} percentage={stats.trendPercentage} />
         </div>
       </div>
 
-      <div className="p-5 space-y-5">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{stats.totalCount.toLocaleString()}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
+      <div className="p-3 sm:p-5 space-y-4 sm:space-y-5">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+            <div className="text-base sm:text-xl font-bold text-indigo-600 dark:text-indigo-400">{stats.totalCount.toLocaleString()}</div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Total</div>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{stats.dailyAverage.toFixed(1)}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Daily Avg</div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+            <div className="text-base sm:text-xl font-bold text-blue-600 dark:text-blue-400">{stats.dailyAverage.toFixed(1)}</div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Daily Avg</div>
           </div>
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-amber-600 dark:text-amber-400">🏆 {stats.peakDay.count}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{formatPeakDate(stats.peakDay.date)}</div>
+          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+            <div className="text-base sm:text-xl font-bold text-amber-600 dark:text-amber-400">🏆 {stats.peakDay.count}</div>
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{formatPeakDate(stats.peakDay.date)}</div>
           </div>
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Daily Progress</h4>
+          <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Daily Progress</h4>
           <TrendLineChart data={stats.dailyData} color={habit.color} unit={habit.unit} />
         </div>
       </div>
@@ -356,14 +369,14 @@ function OverallStatsCard({
   gradient: string;
 }) {
   return (
-    <div className={`${gradient} rounded-2xl p-5 text-white relative overflow-hidden`}>
-      <div className="absolute top-2 right-2 text-4xl opacity-20">{icon}</div>
+    <div className={`${gradient} rounded-xl sm:rounded-2xl p-3 sm:p-5 text-white relative overflow-hidden`}>
+      <div className="absolute top-1 sm:top-2 right-1 sm:right-2 text-2xl sm:text-4xl opacity-20">{icon}</div>
       <div className="relative">
-        <div className="text-sm opacity-80">{title}</div>
-        <div className="text-3xl font-bold mt-1">{value}</div>
-        {subtitle && <div className="text-xs opacity-70 mt-1">{subtitle}</div>}
+        <div className="text-[10px] sm:text-sm opacity-80">{title}</div>
+        <div className="text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{value}</div>
+        {subtitle && <div className="text-[10px] sm:text-xs opacity-70 mt-0.5 sm:mt-1">{subtitle}</div>}
       </div>
-              </div>
+    </div>
   );
 }
 
@@ -383,37 +396,38 @@ function TotalProgressChart({
     };
   });
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{payload: {dayName: string; percentage: number; completed: number; total: number}}>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-gray-900 dark:text-white">{data.dayName}, {label}</p>
-          <p className="text-2xl font-bold mt-1" style={{ color: data.percentage >= 80 ? '#10b981' : data.percentage >= 50 ? '#f59e0b' : '#ef4444' }}>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 sm:p-3">
+          <p className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{data.dayName}, {label}</p>
+          <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1" style={{ color: data.percentage >= 80 ? '#10b981' : data.percentage >= 50 ? '#f59e0b' : '#ef4444' }}>
             {data.percentage}%
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {data.completed} of {data.total} habits completed
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
+            {data.completed} of {data.total} habits
           </p>
-            </div>
-          );
+        </div>
+      );
     }
     return null;
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">This Month&apos;s Progress</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+          <h3 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">This Month&apos;s Progress</h3>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{averageCompletion}%</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Average</div>
+          <div className="text-xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">{averageCompletion}%</div>
+          <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Average</div>
         </div>
+      </div>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
@@ -425,18 +439,19 @@ function TotalProgressChart({
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
           <XAxis 
             dataKey="label" 
-            tick={{ fontSize: 10, fill: '#6b7280' }}
+            tick={{ fontSize: 9, fill: '#6b7280' }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis 
-            tick={{ fontSize: 11, fill: '#6b7280' }}
+            tick={{ fontSize: 10, fill: '#6b7280' }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(value) => `${value}%`}
             domain={[0, 100]}
-            ticks={[0, 25, 50, 75, 100]}
+            ticks={[0, 50, 100]}
+            width={35}
           />
           <Tooltip content={<CustomTooltip />} />
           <ReferenceLine 
@@ -444,13 +459,6 @@ function TotalProgressChart({
             stroke="#6366f1" 
             strokeDasharray="5 5" 
             strokeWidth={2}
-            label={{ 
-              value: `Avg: ${averageCompletion}%`, 
-              position: 'right', 
-              fill: '#6366f1', 
-              fontSize: 11,
-              fontWeight: 600
-            }} 
           />
           <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
           <Area
@@ -460,27 +468,26 @@ function TotalProgressChart({
             strokeWidth={2.5}
             fill="url(#progressGradient)"
             dot={false}
-            activeDot={{ r: 6, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 5, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }}
           />
           <Bar dataKey="percentage" fill="#6366f1" fillOpacity={0.1} radius={[2, 2, 0, 0]} />
         </ComposedChart>
       </ResponsiveContainer>
 
-      <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">80%+ Excellent</span>
+      <div className="flex items-center justify-center gap-3 sm:gap-6 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500" />
+          <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">80%+ Great</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-amber-500" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">50-79% Good</span>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-amber-500" />
+          <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">50-79% Good</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">&lt;50% Needs Work</span>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500" />
+          <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">&lt;50%</span>
         </div>
       </div>
-    </div>
     </div>
   );
 }
@@ -507,9 +514,9 @@ export default function AnalyticsView() {
   if (habits.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8">
-        <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">No Data Yet</h3>
-        <p className="text-gray-600 dark:text-gray-400 max-w-md">
+        <div className="text-5xl sm:text-6xl mb-4">📊</div>
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">No Data Yet</h3>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-md">
           Start tracking habits to see detailed analytics. Add your first habit to begin your journey!
         </p>
       </div>
@@ -550,38 +557,38 @@ export default function AnalyticsView() {
 
   return (
     <div className="h-full overflow-auto bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 pb-24 sm:pb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics Dashboard</h2>
-          <p className="text-gray-600 dark:text-gray-400">Track your progress and discover patterns in your habits</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">Analytics</h2>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Track your progress and discover patterns</p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <OverallStatsCard
             title="Current Streak"
-            value={`${bestCurrentStreak} days`}
-            subtitle="Best active streak"
+            value={`${bestCurrentStreak}d`}
+            subtitle="Best active"
             icon="🔥"
             gradient="bg-gradient-to-br from-orange-500 to-red-600"
           />
           <OverallStatsCard
             title="This Month"
             value={`${overallAverageCompletion}%`}
-            subtitle="Average completion"
+            subtitle="Avg completion"
             icon="📈"
             gradient="bg-gradient-to-br from-green-500 to-emerald-600"
           />
           <OverallStatsCard
             title="Best Streak"
-            value={`${bestStreakEver} days`}
-            subtitle="All-time record"
+            value={`${bestStreakEver}d`}
+            subtitle="All-time"
             icon="🏆"
             gradient="bg-gradient-to-br from-amber-500 to-orange-600"
           />
           <OverallStatsCard
             title="Completions"
             value={totalCompletions}
-            subtitle={`${habits.length} habits tracked`}
+            subtitle={`${habits.length} habits`}
             icon="✓"
             gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
           />
@@ -593,20 +600,20 @@ export default function AnalyticsView() {
         />
 
         {checkboxHabits.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-8 bg-indigo-500 rounded-full" />
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-1 h-6 sm:h-8 bg-indigo-500 rounded-full" />
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                 Checkpoint Habits
               </h3>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                ({checkboxHabits.length} habit{checkboxHabits.length !== 1 ? 's' : ''})
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                ({checkboxHabits.length})
               </span>
           </div>
-            <p className="text-gray-600 dark:text-gray-400 -mt-4 ml-4">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 -mt-2 sm:-mt-4 ml-3 sm:ml-4">
               Daily yes/no habits tracked for consistency
             </p>
-<div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {checkboxHabits.map((habit) => (
                 <CheckboxHabitCard
                   key={habit.id}
@@ -620,20 +627,20 @@ export default function AnalyticsView() {
         )}
 
         {counterHabits.length > 0 && (
-          <div className="space-y-6">
-                <div className="flex items-center gap-3">
-              <div className="w-1 h-8 bg-emerald-500 rounded-full" />
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-1 h-6 sm:h-8 bg-emerald-500 rounded-full" />
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                 Counter Habits
               </h3>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                ({counterHabits.length} habit{counterHabits.length !== 1 ? 's' : ''})
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                ({counterHabits.length})
               </span>
                   </div>
-            <p className="text-gray-600 dark:text-gray-400 -mt-4 ml-4">
-              Quantity-based habits for tracking amounts and volumes
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 -mt-2 sm:-mt-4 ml-3 sm:ml-4">
+              Quantity-based habits for tracking amounts
             </p>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {counterHabits.map((habit) => (
                 <CounterHabitCard
                   key={habit.id}

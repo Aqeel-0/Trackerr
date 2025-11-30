@@ -1,105 +1,227 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface SidebarProps {
   currentView: "tracker" | "analytics";
   setCurrentView: (view: "tracker" | "analytics") => void;
   onAddHabit: () => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
 }
 
-export default function Sidebar({ currentView, setCurrentView, onAddHabit }: SidebarProps) {
+export default function Sidebar({ 
+  currentView, 
+  setCurrentView, 
+  onAddHabit,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen
+}: SidebarProps) {
   const { theme, toggleTheme } = useTheme();
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isMobileMenuOpen]);
+
+  const handleNavClick = (view: "tracker" | "analytics") => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleAddHabit = () => {
+    onAddHabit();
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="w-20 lg:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full transition-all duration-300">
-      <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-200 dark:border-slate-800">
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
-          T
-        </div>
-        <span className="hidden lg:block ml-3 font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          Trackerr
-        </span>
-      </div>
-
-      <nav className="flex-1 p-3 lg:p-4 space-y-1">
-        <button
-          onClick={() => setCurrentView("tracker")}
-          className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
-            currentView === "tracker"
-              ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
-          }`}
-          title="Tracker"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-          </svg>
-          <span className="hidden lg:block font-medium">Tracker</span>
-        </button>
-
-        <button
-          onClick={() => setCurrentView("analytics")}
-          className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
-            currentView === "analytics"
-              ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
-          }`}
-          title="Analytics"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 3v18h18"></path>
-            <path d="M18 17V9"></path>
-            <path d="M13 17V5"></path>
-            <path d="M8 17v-3"></path>
-          </svg>
-          <span className="hidden lg:block font-medium">Analytics</span>
-        </button>
-      </nav>
-
-      <div className="p-3 lg:p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
-        <button
-          onClick={onAddHabit}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white p-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] group"
-          title="Add Habit"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:rotate-90 transition-transform duration-200">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span className="hidden lg:block font-semibold">New Habit</span>
-        </button>
-
-        <button
-          onClick={toggleTheme}
-          className="w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-200"
-          title="Toggle Theme"
-        >
-          {theme === "light" ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-          )}
-          <span className="hidden lg:block text-sm">
-            {theme === "light" ? "Dark Mode" : "Light Mode"}
+    <>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex w-20 lg:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col h-full transition-all duration-300">
+        <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
+            T
+          </div>
+          <span className="hidden lg:block ml-3 font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Trackerr
           </span>
-        </button>
+        </div>
+
+        <nav className="flex-1 p-3 lg:p-4 space-y-1">
+          <button
+            onClick={() => setCurrentView("tracker")}
+            className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
+              currentView === "tracker"
+                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
+            title="Tracker"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            <span className="hidden lg:block font-medium">Tracker</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView("analytics")}
+            className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
+              currentView === "analytics"
+                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
+            title="Analytics"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3v18h18"></path>
+              <path d="M18 17V9"></path>
+              <path d="M13 17V5"></path>
+              <path d="M8 17v-3"></path>
+            </svg>
+            <span className="hidden lg:block font-medium">Analytics</span>
+          </button>
+        </nav>
+
+        <div className="p-3 lg:p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+          <button
+            onClick={onAddHabit}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white p-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] group"
+            title="Add Habit"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:rotate-90 transition-transform duration-200">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span className="hidden lg:block font-semibold">New Habit</span>
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 transition-all duration-200"
+            title="Toggle Theme"
+          >
+            {theme === "light" ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
+            <span className="hidden lg:block text-sm">
+              {theme === "light" ? "Dark Mode" : "Light Mode"}
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 animate-fade-in"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Slide-out Menu */}
+      <div className={`md:hidden fixed inset-y-0 right-0 w-[280px] bg-white dark:bg-slate-900 z-50 transform transition-transform duration-300 ease-out shadow-2xl ${
+        isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+      }`}>
+        <div className="flex flex-col h-full safe-top safe-bottom">
+          <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
+                T
+              </div>
+              <span className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Trackerr
+              </span>
+            </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 -mr-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-2">
+            <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 py-2">
+              Menu
+            </div>
+            
+            <button
+              onClick={() => handleNavClick("tracker")}
+              className={`mobile-nav-item w-full ${currentView === "tracker" ? "mobile-nav-item-active" : ""}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              </svg>
+              <span>Tracker</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick("analytics")}
+              className={`mobile-nav-item w-full ${currentView === "analytics" ? "mobile-nav-item-active" : ""}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18"></path>
+                <path d="M18 17V9"></path>
+                <path d="M13 17V5"></path>
+                <path d="M8 17v-3"></path>
+              </svg>
+              <span>Analytics</span>
+            </button>
+
+            <div className="pt-4">
+              <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 py-2">
+                Actions
+              </div>
+              <button
+                onClick={handleAddHabit}
+                className="mobile-nav-item w-full text-indigo-600 dark:text-indigo-400"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Add New Habit</span>
+              </button>
+            </div>
+          </nav>
+
+          <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="text-xs text-slate-400 dark:text-slate-500 text-center">
+              Trackerr v1.0
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

@@ -8,6 +8,7 @@ import {
   getMonthYear,
   getMonthWeeks,
   getDayName,
+  getCurrentWeek,
 } from "@/utils/dateUtils";
 import {
   DndContext,
@@ -30,7 +31,7 @@ import { Habit } from "@/types/habit";
 
 interface SortableHabitRowProps {
   habit: Habit;
-  monthWeeks: Date[][];
+  dates: Date[];
   today: Date;
   getWeekColor: (index: number) => string;
   onDelete: (id: string, name: string) => void;
@@ -38,11 +39,13 @@ interface SortableHabitRowProps {
   isHabitCompleted: (habitId: string, date: string) => boolean;
   setCounter: (habitId: string, date: string, count: number) => void;
   getCounter: (habitId: string, date: string) => number;
+  isMobileView?: boolean;
+  isTabletView?: boolean;
 }
 
 function SortableHabitRow({
   habit,
-  monthWeeks,
+  dates,
   today,
   getWeekColor,
   onDelete,
@@ -50,6 +53,8 @@ function SortableHabitRow({
   isHabitCompleted,
   setCounter,
   getCounter,
+  isMobileView = false,
+  isTabletView = false,
 }: SortableHabitRowProps) {
   const {
     attributes,
@@ -65,19 +70,21 @@ function SortableHabitRow({
     transition,
   };
 
+  const isCompactView = isMobileView || isTabletView;
+
   return (
     <tr
       ref={setNodeRef}
       style={style}
       className={`group ${isDragging ? "opacity-50" : ""}`}
     >
-      <td className="border border-slate-200 dark:border-slate-700 py-1 px-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 text-xs w-[140px]">
-        <div className="flex items-center justify-between gap-1 h-full">
-          <div className="flex items-center gap-1.5 truncate">
+      <td className={`border border-slate-200 dark:border-slate-700 py-1 px-1 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
+        <div className="flex items-center justify-between gap-0.5 h-full">
+          <div className="flex items-center gap-1 truncate">
             <button
               {...attributes}
               {...listeners}
-              className="touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing flex-shrink-0 hidden sm:block"
               aria-label="Drag to reorder"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -85,112 +92,253 @@ function SortableHabitRow({
                 <circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" />
               </svg>
             </button>
-            <span className="text-sm flex-shrink-0">{habit.icon}</span>
-            <span className="truncate text-xs">{habit.name}</span>
+            <span className={`flex-shrink-0 ${isMobileView ? 'text-sm' : 'text-sm'}`}>{habit.icon}</span>
+            <span className={`truncate ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>{habit.name}</span>
           </div>
           <button
             onClick={() => onDelete(habit.id, habit.name)}
-            className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+            className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hidden sm:block"
             title="Delete habit"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </td>
-      {monthWeeks.map((week, weekIndex) =>
-        week.map((date, dayIndex) => {
-          const dateString = formatDateToString(date);
-          const isCompleted = isHabitCompleted(habit.id, dateString);
-          const isToday = isSameDay(date, today);
-          const isFuture = date > today;
+      {dates.map((date, dayIndex) => {
+        const dateString = formatDateToString(date);
+        const isCompleted = isHabitCompleted(habit.id, dateString);
+        const isToday = isSameDay(date, today);
+        const isFuture = date > today && !isToday;
+        const weekIndex = Math.floor(dayIndex / 7);
 
-          return (
-            <td
-              key={`${weekIndex}-${dayIndex}`}
-              className={`border p-0 text-center h-full relative ${isToday
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
-                  : `${getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
-                }`}
-            >
-              {habit.trackingType === "checkbox" ? (
-                <div className="flex items-center justify-center h-full w-full p-0.5">
-                  <button
-                    onClick={() => !isFuture && toggleCompletion(habit.id, dateString)}
-                    disabled={isFuture}
-                    className={`
-                      w-4 h-4 flex items-center justify-center transition-all duration-100 rounded-none border
-                      ${isFuture
-                        ? "opacity-20 cursor-not-allowed bg-transparent border-gray-400"
-                        : "cursor-pointer"
-                      }
-                      ${isCompleted
-                        ? "bg-green-600 dark:bg-green-500 border-green-600 dark:border-green-500 text-white"
-                        : "bg-transparent border-gray-400 dark:border-gray-500 hover:border-gray-600"
-                      }
-                    `}
-                  >
-                    {isCompleted && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full w-full p-0 gap-0">
-                  <button
-                    onClick={() => {
-                      if (!isFuture) {
-                        const current = getCounter(habit.id, dateString);
-                        if (current > 0) setCounter(habit.id, dateString, current - 1);
-                      }
-                    }}
-                    disabled={isFuture || getCounter(habit.id, dateString) === 0}
-                    className={`w-3 h-4 flex items-center justify-center text-[9px] font-bold transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
-                        ? "opacity-20 cursor-not-allowed text-slate-400"
-                        : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                      }`}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    min="0"
-                    max="999"
-                    value={getCounter(habit.id, dateString) || ""}
-                    onChange={(e) => setCounter(habit.id, dateString, parseInt(e.target.value) || 0)}
-                    disabled={isFuture}
-                    onClick={(e) => e.currentTarget.select()}
-                    className={`
-                      w-4 h-4 text-center text-[9px] border-0 focus:ring-1 focus:ring-indigo-500 bg-transparent p-0 font-mono
-                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
-                      ${isFuture ? "text-slate-300 cursor-not-allowed" : "text-slate-700 dark:text-slate-200"}
-                      ${getCounter(habit.id, dateString) > 0 ? "font-bold" : ""}
-                    `}
-                    placeholder="·"
-                  />
-                  <button
-                    onClick={() => {
-                      if (!isFuture) {
-                        const current = getCounter(habit.id, dateString);
-                        setCounter(habit.id, dateString, current + 1);
-                      }
-                    }}
-                    disabled={isFuture}
-                    className={`w-3 h-4 flex items-center justify-center text-[9px] font-bold transition-colors ${isFuture
-                        ? "opacity-20 cursor-not-allowed text-slate-400"
-                        : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                      }`}
-                  >
-                    +
-                  </button>
-                </div>
-              )}
-            </td>
-          );
-        })
-      )}
+        return (
+          <td
+            key={dayIndex}
+            className={`border p-0 text-center h-full relative ${isToday
+              ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
+              : `${getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
+            }`}
+          >
+            {habit.trackingType === "checkbox" ? (
+              <div className={`flex items-center justify-center h-full w-full ${isMobileView ? 'p-1' : 'p-0.5'}`}>
+                <button
+                  onClick={() => !isFuture && toggleCompletion(habit.id, dateString)}
+                  disabled={isFuture}
+                  className={`
+                    ${isMobileView ? 'w-6 h-6' : isTabletView ? 'w-5 h-5' : 'w-4 h-4'} flex items-center justify-center transition-all duration-100 rounded-none border
+                    ${isFuture
+                      ? "opacity-20 cursor-not-allowed bg-transparent border-gray-400"
+                      : "cursor-pointer"
+                    }
+                    ${isCompleted
+                      ? "bg-green-600 dark:bg-green-500 border-green-600 dark:border-green-500 text-white"
+                      : "bg-transparent border-gray-400 dark:border-gray-500 hover:border-gray-600"
+                    }
+                  `}
+                >
+                  {isCompleted && (
+                    <svg xmlns="http://www.w3.org/2000/svg" width={isMobileView ? "14" : "12"} height={isMobileView ? "14" : "12"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className={`flex items-center justify-center h-full w-full p-0 ${isMobileView ? 'gap-0' : 'gap-0'}`}>
+                <button
+                  onClick={() => {
+                    if (!isFuture) {
+                      const current = getCounter(habit.id, dateString);
+                      if (current > 0) setCounter(habit.id, dateString, current - 1);
+                    }
+                  }}
+                  disabled={isFuture || getCounter(habit.id, dateString) === 0}
+                  className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
+                    ? "opacity-20 cursor-not-allowed text-slate-400"
+                    : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
+                  }`}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  max="999"
+                  value={getCounter(habit.id, dateString) || ""}
+                  onChange={(e) => setCounter(habit.id, dateString, parseInt(e.target.value) || 0)}
+                  disabled={isFuture}
+                  onClick={(e) => e.currentTarget.select()}
+                  className={`
+                    ${isMobileView ? 'w-5 h-6 text-xs' : 'w-4 h-4 text-[9px]'} text-center border-0 focus:ring-1 focus:ring-indigo-500 bg-transparent p-0 font-mono
+                    [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
+                    ${isFuture ? "text-slate-300 cursor-not-allowed" : "text-slate-700 dark:text-slate-200"}
+                    ${getCounter(habit.id, dateString) > 0 ? "font-bold" : ""}
+                  `}
+                  placeholder="·"
+                />
+                <button
+                  onClick={() => {
+                    if (!isFuture) {
+                      const current = getCounter(habit.id, dateString);
+                      setCounter(habit.id, dateString, current + 1);
+                    }
+                  }}
+                  disabled={isFuture}
+                  className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture
+                    ? "opacity-20 cursor-not-allowed text-slate-400"
+                    : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
+                  }`}
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </td>
+        );
+      })}
     </tr>
+  );
+}
+
+function CompactWeekView({
+  habits,
+  weekDates,
+  today,
+  toggleCompletion,
+  isHabitCompleted,
+  setCounter,
+  getCounter,
+  deleteHabit,
+  reorderHabits,
+  isMobileView = false,
+  isTabletView = false,
+}: {
+  habits: Habit[];
+  weekDates: Date[];
+  today: Date;
+  toggleCompletion: (habitId: string, date: string) => void;
+  isHabitCompleted: (habitId: string, date: string) => boolean;
+  setCounter: (habitId: string, date: string, count: number) => void;
+  getCounter: (habitId: string, date: string) => number;
+  deleteHabit: (id: string) => void;
+  reorderHabits: (habits: Habit[]) => void;
+  isMobileView?: boolean;
+  isTabletView?: boolean;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = habits.findIndex((h) => h.id === active.id);
+      const newIndex = habits.findIndex((h) => h.id === over.id);
+      reorderHabits(arrayMove(habits, oldIndex, newIndex));
+    }
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteHabit(id);
+    }
+  };
+
+  const numDays = weekDates.length;
+
+  const getHeaderBg = (idx: number) => {
+    if (isMobileView) return "bg-slate-100 dark:bg-slate-800";
+    const weekIdx = Math.floor(idx / 7);
+    return weekIdx % 2 === 0
+      ? "bg-[#ebebeb] dark:bg-gray-700"
+      : "bg-[#dedede] dark:bg-gray-600";
+  };
+
+  const getCellBg = (weekIdx: number) => {
+    if (isMobileView) return "bg-white dark:bg-slate-900";
+    return weekIdx % 2 === 0
+      ? "bg-[#f5f5f5] dark:bg-gray-800"
+      : "bg-[#e8e8e8] dark:bg-gray-700";
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <table className="w-full border-collapse text-xs table-fixed">
+        <colgroup>
+          <col style={{ width: isMobileView ? '22%' : '18%' }} />
+          {weekDates.map((_, idx) => (
+            <col key={idx} style={{ width: isMobileView ? `${78 / numDays}%` : `${82 / numDays}%` }} />
+          ))}
+        </colgroup>
+        <thead className="sticky top-0 z-20">
+          <tr>
+            <th rowSpan={2} className={`border border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
+              Habits
+            </th>
+            {Array.from({ length: Math.ceil(numDays / 7) }).map((_, weekIdx) => {
+              const weekDaysCount = Math.min(7, numDays - weekIdx * 7);
+              return (
+                <th
+                  key={weekIdx}
+                  colSpan={weekDaysCount}
+                  className={`border border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center font-semibold text-[10px] ${getHeaderBg(weekIdx * 7)}`}
+                >
+                  <span className="text-slate-500 dark:text-slate-400">W{weekIdx + 1}</span>
+                </th>
+              );
+            })}
+          </tr>
+          <tr>
+            {weekDates.map((date, idx) => {
+              const isToday = isSameDay(date, today);
+              return (
+                <th
+                  key={idx}
+                  className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${
+                    isToday
+                      ? "bg-indigo-500 text-white"
+                      : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
+                  }`}
+                >
+                  <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
+                  <div className={`font-bold ${isMobileView ? 'text-xs' : 'text-sm'}`}>{date.getDate()}</div>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <SortableContext
+          items={habits.map((h) => h.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <tbody>
+            {habits.map((habit) => (
+              <SortableHabitRow
+                key={habit.id}
+                habit={habit}
+                dates={weekDates}
+                today={today}
+                getWeekColor={getCellBg}
+                onDelete={handleDelete}
+                toggleCompletion={toggleCompletion}
+                isHabitCompleted={isHabitCompleted}
+                setCounter={setCounter}
+                getCounter={getCounter}
+                isMobileView={isMobileView}
+                isTabletView={isTabletView}
+              />
+            ))}
+          </tbody>
+        </SortableContext>
+      </table>
+    </DndContext>
   );
 }
 
@@ -198,10 +346,27 @@ export default function MonthlyView() {
   const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits } = useHabits();
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [today, setToday] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [weekOffset, setWeekOffset] = useState(0);
 
   useEffect(() => {
     setCurrentDate(new Date());
     setToday(new Date());
+    
+    const checkViewMode = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        setViewMode('mobile');
+      } else if (width < 1280) {
+        setViewMode('tablet');
+      } else {
+        setViewMode('desktop');
+      }
+    };
+    
+    checkViewMode();
+    window.addEventListener('resize', checkViewMode);
+    return () => window.removeEventListener('resize', checkViewMode);
   }, []);
 
   const sensors = useSensors(
@@ -238,12 +403,42 @@ export default function MonthlyView() {
 
   const goToCurrentMonth = () => {
     setCurrentDate(new Date());
+    setWeekOffset(0);
   };
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
       deleteHabit(id);
     }
+  };
+
+  const getWeekDates = (weeksToShow: number): Date[] => {
+    if (!today) return [];
+    const currentWeek = getCurrentWeek();
+    const dates: Date[] = [];
+    
+    for (let w = 0; w < weeksToShow; w++) {
+      for (let d = 0; d < 7; d++) {
+        const newDate = new Date(currentWeek[d]);
+        newDate.setDate(currentWeek[d].getDate() + (weekOffset * 7) + (w * 7));
+        dates.push(newDate);
+      }
+    }
+    return dates;
+  };
+
+  const getWeekLabel = (weeksToShow: number): string => {
+    const dates = getWeekDates(weeksToShow);
+    if (dates.length === 0) return "";
+    
+    const start = dates[0];
+    const end = dates[dates.length - 1];
+    
+    if (weekOffset === 0 && weeksToShow === 1) return "This Week";
+    if (weekOffset === -1 && weeksToShow === 1) return "Last Week";
+    if (weekOffset === 1 && weeksToShow === 1) return "Next Week";
+    
+    return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
   if (!currentDate || !today) {
@@ -273,12 +468,72 @@ export default function MonthlyView() {
 
   if (habits.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white dark:bg-slate-900">
         <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
           <span className="text-3xl">📋</span>
         </div>
         <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">No habits yet</p>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Click &quot;New Habit&quot; to get started</p>
+      </div>
+    );
+  }
+
+  if (viewMode === 'mobile' || viewMode === 'tablet') {
+    const weeksToShow = viewMode === 'mobile' ? 1 : 2;
+    const weekDates = getWeekDates(weeksToShow);
+    
+    return (
+      <div className="h-full flex flex-col bg-white dark:bg-slate-900">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setWeekOffset(weekOffset - 1)}
+              className="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 transition-all"
+            >
+              ←
+            </button>
+            <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 min-w-[90px] text-center">
+              {getWeekLabel(weeksToShow)}
+            </h2>
+            <button
+              onClick={() => setWeekOffset(weekOffset + 1)}
+              className="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 transition-all"
+            >
+              →
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[10px] text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{totalHabits}</span> habits
+            </span>
+            {weekOffset !== 0 && (
+              <button
+                onClick={() => setWeekOffset(0)}
+                className="px-2 h-7 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-semibold transition-all"
+              >
+                Today
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Week Table */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-4">
+          <CompactWeekView
+            habits={habits}
+            weekDates={weekDates}
+            today={today}
+            toggleCompletion={toggleCompletion}
+            isHabitCompleted={isHabitCompleted}
+            setCounter={setCounter}
+            getCounter={getCounter}
+            deleteHabit={deleteHabit}
+            reorderHabits={reorderHabits}
+            isMobileView={viewMode === 'mobile'}
+            isTabletView={viewMode === 'tablet'}
+          />
+        </div>
       </div>
     );
   }
@@ -372,9 +627,9 @@ export default function MonthlyView() {
                   <SortableHabitRow
                     key={habit.id}
                     habit={habit}
-                    monthWeeks={monthWeeks}
+                    dates={monthWeeks.flat()}
                     today={today}
-                    getWeekColor={getWeekColor}
+                    getWeekColor={(idx) => getWeekColor(Math.floor(idx / 7))}
                     onDelete={handleDelete}
                     toggleCompletion={toggleCompletion}
                     isHabitCompleted={isHabitCompleted}
