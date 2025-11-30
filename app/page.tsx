@@ -71,10 +71,10 @@ export default function Home() {
               {formattedDate}
             </div>
             
-            {/* Mobile Dark Mode Toggle - Right side */}
+            {/* Dark Mode Toggle - All sizes */}
             <button
               onClick={toggleTheme}
-              className="md:hidden p-2 -mr-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 -mr-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === "light" ? (

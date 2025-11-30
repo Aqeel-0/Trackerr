@@ -116,7 +116,7 @@ function SortableHabitRow({
             key={dayIndex}
             className={`border p-0 text-center h-full relative ${isToday
               ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
-              : `${isCompactView ? 'bg-white dark:bg-slate-900' : getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
+              : `${getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
             }`}
           >
             {habit.trackingType === "checkbox" ? (
@@ -249,6 +249,21 @@ function CompactWeekView({
 
   const numDays = weekDates.length;
 
+  const getHeaderBg = (idx: number) => {
+    if (isMobileView) return "bg-slate-100 dark:bg-slate-800";
+    const weekIdx = Math.floor(idx / 7);
+    return weekIdx % 2 === 0
+      ? "bg-[#ebebeb] dark:bg-gray-700"
+      : "bg-[#dedede] dark:bg-gray-600";
+  };
+
+  const getCellBg = (weekIdx: number) => {
+    if (isMobileView) return "bg-white dark:bg-slate-900";
+    return weekIdx % 2 === 0
+      ? "bg-[#f5f5f5] dark:bg-gray-800"
+      : "bg-[#e8e8e8] dark:bg-gray-700";
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -262,11 +277,25 @@ function CompactWeekView({
             <col key={idx} style={{ width: isMobileView ? `${78 / numDays}%` : `${82 / numDays}%` }} />
           ))}
         </colgroup>
-        <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-800">
+        <thead className="sticky top-0 z-20">
           <tr>
-            <th className={`border border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
+            <th rowSpan={2} className={`border border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
               Habits
             </th>
+            {Array.from({ length: Math.ceil(numDays / 7) }).map((_, weekIdx) => {
+              const weekDaysCount = Math.min(7, numDays - weekIdx * 7);
+              return (
+                <th
+                  key={weekIdx}
+                  colSpan={weekDaysCount}
+                  className={`border border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center font-semibold text-[10px] ${getHeaderBg(weekIdx * 7)}`}
+                >
+                  <span className="text-slate-500 dark:text-slate-400">W{weekIdx + 1}</span>
+                </th>
+              );
+            })}
+          </tr>
+          <tr>
             {weekDates.map((date, idx) => {
               const isToday = isSameDay(date, today);
               return (
@@ -275,7 +304,7 @@ function CompactWeekView({
                   className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${
                     isToday
                       ? "bg-indigo-500 text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                      : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
                   }`}
                 >
                   <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
@@ -296,7 +325,7 @@ function CompactWeekView({
                 habit={habit}
                 dates={weekDates}
                 today={today}
-                getWeekColor={() => "bg-white dark:bg-slate-900"}
+                getWeekColor={getCellBg}
                 onDelete={handleDelete}
                 toggleCompletion={toggleCompletion}
                 isHabitCompleted={isHabitCompleted}

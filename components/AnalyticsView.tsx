@@ -58,12 +58,13 @@ function CurrentWeekChart({
   color: string; 
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const today = new Date();
   const currentDayOfWeek = today.getDay();
+  const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
   
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - currentDayOfWeek);
+  weekStart.setDate(today.getDate() - daysFromMonday);
   
   const chartData = days.map((day, index) => {
     const date = new Date(weekStart);
@@ -76,7 +77,7 @@ function CurrentWeekChart({
       value: isFuture ? 0 : (completed ? 100 : 0),
       completed,
       isFuture,
-      isToday: index === currentDayOfWeek,
+      isToday: index === daysFromMonday,
     };
   });
 
