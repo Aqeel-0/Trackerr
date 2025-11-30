@@ -481,6 +481,7 @@ function TotalProgressChart({
         </div>
       </div>
     </div>
+    </div>
   );
 }
 
