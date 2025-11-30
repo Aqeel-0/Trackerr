@@ -8,13 +8,44 @@ export interface Habit {
   icon: string;
   trackingType: TrackingType;
   createdAt: string;
+  targetCount?: number;
+  unit?: string;
 }
 
 export interface HabitCompletion {
   habitId: string;
-  date: string; // ISO date string (YYYY-MM-DD)
+  date: string;
   completed: boolean;
-  count?: number; // For counter-based habits
+  count?: number;
+}
+
+export interface CheckboxStats {
+  totalDays: number;
+  completedDays: number;
+  currentStreak: number;
+  longestStreak: number;
+  completionRate: number;
+  weeklyBreakdown: number[];
+  bestDay: { day: string; rate: number };
+  worstDay: { day: string; rate: number };
+  monthlyData: { month: string; rate: number }[];
+  last30Days: { date: string; completed: boolean }[];
+}
+
+export interface CounterStats {
+  totalCount: number;
+  dailyAverage: number;
+  weeklyAverage: number;
+  monthlyAverage: number;
+  peakDay: { date: string; count: number };
+  peakWeek: { weekStart: string; count: number };
+  currentStreak: number;
+  longestStreak: number;
+  trend: "up" | "down" | "stable";
+  trendPercentage: number;
+  weeklyBreakdown: number[];
+  dailyData: { date: string; count: number }[];
+  weeklyData: { week: string; count: number }[];
 }
 
 export interface HabitContextType {
@@ -33,5 +64,7 @@ export interface HabitContextType {
     longestStreak: number;
     completionRate: number;
   };
+  getCheckboxStats: (habitId: string) => CheckboxStats;
+  getCounterStats: (habitId: string) => CounterStats;
   reorderHabits: (newOrder: Habit[]) => void;
 }

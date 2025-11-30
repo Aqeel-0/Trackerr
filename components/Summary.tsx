@@ -99,7 +99,7 @@ export default function Summary() {
                   {stats.completionRate >= 50 && stats.completionRate < 80 && (
                     <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                       <span className="text-xl">👍</span>
-                      <span className="font-medium">Good progress! You're doing well.</span>
+                      <span className="font-medium">Good progress! You&apos;re doing well.</span>
                     </div>
                   )}
                   {stats.completionRate >= 25 && stats.completionRate < 50 && (

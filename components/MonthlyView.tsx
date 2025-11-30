@@ -71,44 +71,29 @@ function SortableHabitRow({
       style={style}
       className={`group ${isDragging ? "opacity-50" : ""}`}
     >
-      <td className="border border-gray-300 dark:border-gray-600 py-1.5 px-2 sticky left-0 bg-[#f9f9f9] dark:bg-gray-800 z-10 font-medium text-gray-700 dark:text-gray-200 text-sm">
-        <div className="flex items-center justify-between gap-2 h-full">
-          <div className="flex items-center gap-2 truncate">
-            {/* Drag Handle */}
+      <td className="border border-slate-200 dark:border-slate-700 py-1 px-1.5 sticky left-0 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 text-xs w-[140px]">
+        <div className="flex items-center justify-between gap-1 h-full">
+          <div className="flex items-center gap-1.5 truncate">
             <button
               {...attributes}
               {...listeners}
-              className="touch-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing flex-shrink-0"
+              className="touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing flex-shrink-0"
               aria-label="Drag to reorder"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="9" cy="12" r="1" />
-                <circle cx="9" cy="5" r="1" />
-                <circle cx="9" cy="19" r="1" />
-                <circle cx="15" cy="12" r="1" />
-                <circle cx="15" cy="5" r="1" />
-                <circle cx="15" cy="19" r="1" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" />
+                <circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" />
               </svg>
             </button>
-            <span className="text-lg flex-shrink-0">{habit.icon}</span>
-            <span className="truncate">{habit.name}</span>
+            <span className="text-sm flex-shrink-0">{habit.icon}</span>
+            <span className="truncate text-xs">{habit.name}</span>
           </div>
           <button
             onClick={() => onDelete(habit.id, habit.name)}
-            className="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 text-sm"
+            className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
             title="Delete habit"
           >
-            ✕
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </td>
@@ -122,9 +107,9 @@ function SortableHabitRow({
           return (
             <td
               key={`${weekIndex}-${dayIndex}`}
-              className={`border p-0 text-center min-w-[28px] h-full relative ${isToday
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-700"
-                  : `${getWeekColor(weekIndex)} border-gray-300 dark:border-gray-600`
+              className={`border p-0 text-center h-full relative ${isToday
+                  ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
+                  : `${getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
                 }`}
             >
               {habit.trackingType === "checkbox" ? (
@@ -145,39 +130,26 @@ function SortableHabitRow({
                     `}
                   >
                     {isCompleted && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                     )}
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full w-full p-0.5 gap-0.5">
+                <div className="flex items-center justify-center h-full w-full p-0 gap-0">
                   <button
                     onClick={() => {
                       if (!isFuture) {
                         const current = getCounter(habit.id, dateString);
-                        if (current > 0) {
-                          setCounter(habit.id, dateString, current - 1);
-                        }
+                        if (current > 0) setCounter(habit.id, dateString, current - 1);
                       }
                     }}
                     disabled={isFuture || getCounter(habit.id, dateString) === 0}
-                    className={`w-3 h-5 flex items-center justify-center text-[11px] font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
-                        ? "opacity-20 cursor-not-allowed"
-                        : "cursor-pointer text-indigo-600 dark:text-indigo-400"
+                    className={`w-3 h-4 flex items-center justify-center text-[9px] font-bold transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
+                        ? "opacity-20 cursor-not-allowed text-slate-400"
+                        : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
                       }`}
-                    title="Decrease"
                   >
                     −
                   </button>
@@ -186,19 +158,16 @@ function SortableHabitRow({
                     min="0"
                     max="999"
                     value={getCounter(habit.id, dateString) || ""}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      setCounter(habit.id, dateString, value);
-                    }}
+                    onChange={(e) => setCounter(habit.id, dateString, parseInt(e.target.value) || 0)}
                     disabled={isFuture}
                     onClick={(e) => e.currentTarget.select()}
                     className={`
-                      w-6 h-5 text-center text-[10px] border-0 focus:ring-1 focus:ring-indigo-500 bg-transparent p-0 rounded
+                      w-4 h-4 text-center text-[9px] border-0 focus:ring-1 focus:ring-indigo-500 bg-transparent p-0 font-mono
                       [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
-                      ${isFuture ? "text-gray-400 cursor-not-allowed" : "text-gray-900 dark:text-gray-100"}
+                      ${isFuture ? "text-slate-300 cursor-not-allowed" : "text-slate-700 dark:text-slate-200"}
                       ${getCounter(habit.id, dateString) > 0 ? "font-bold" : ""}
                     `}
-                    placeholder="-"
+                    placeholder="·"
                   />
                   <button
                     onClick={() => {
@@ -208,11 +177,10 @@ function SortableHabitRow({
                       }
                     }}
                     disabled={isFuture}
-                    className={`w-3 h-5 flex items-center justify-center text-[11px] font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded transition-colors ${isFuture
-                        ? "opacity-20 cursor-not-allowed"
-                        : "cursor-pointer text-indigo-600 dark:text-indigo-400"
+                    className={`w-3 h-4 flex items-center justify-center text-[9px] font-bold transition-colors ${isFuture
+                        ? "opacity-20 cursor-not-allowed text-slate-400"
+                        : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
                       }`}
-                    title="Increase"
                   >
                     +
                   </button>
@@ -305,74 +273,71 @@ export default function MonthlyView() {
 
   if (habits.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-center text-gray-500">
-        <div>
-          <p className="text-lg font-medium">No habits yet</p>
-          <p className="text-sm mt-2">Add your first habit to start tracking</p>
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
+          <span className="text-3xl">📋</span>
         </div>
+        <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">No habits yet</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Click &quot;New Habit&quot; to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col min-h-0 bg-[#f8f9fa] dark:bg-gray-900">
-      {/* Month Header */}
-      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
-        <div className="flex items-center gap-4 px-2">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">{getMonthYear(currentDate)}</h2>
-          <div className="flex gap-4 text-xs">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 dark:text-gray-400">Habits:</span>
-              <span className="font-semibold text-gray-800 dark:text-gray-200">{totalHabits}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 dark:text-gray-400">Completed:</span>
-              <span className="font-semibold text-gray-800 dark:text-gray-200">{completedCount}</span>
-            </div>
+    <div className="h-full flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex-shrink-0 bg-white dark:bg-slate-900">
+        <div className="flex items-center gap-4">
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">{getMonthYear(currentDate)}</h2>
+          <div className="hidden sm:flex gap-3 text-xs">
+            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-600 dark:text-slate-400">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{totalHabits}</span> habits
+            </span>
+            <span className="px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-md text-emerald-600 dark:text-emerald-400">
+              <span className="font-semibold">{completedCount}</span> done
+            </span>
           </div>
         </div>
         <div className="flex gap-1">
           <button
             onClick={goToPreviousMonth}
-            className="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors"
+            className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 transition-all"
           >
             ←
           </button>
           {!isCurrentMonth && (
             <button
               onClick={goToCurrentMonth}
-              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs font-medium transition-colors"
+              className="px-3 h-8 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-semibold transition-all"
             >
               Today
             </button>
           )}
           <button
             onClick={goToNextMonth}
-            className="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors"
+            className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 transition-all"
           >
             →
           </button>
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 min-h-0 custom-scrollbar">
+      <div className="flex-1 overflow-auto bg-white dark:bg-slate-900 min-h-0">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <table className="w-full border-collapse text-[11px]">
-            <thead className="sticky top-0 z-20 shadow-sm bg-[#f0f0f0] dark:bg-gray-800">
+          <table className="w-full border-collapse text-[10px] table-fixed">
+            <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-800">
               <tr>
-                <th rowSpan={2} className="border-r border-t border-l border-gray-300 dark:border-gray-600 p-2 text-center bg-[#e8e8e8] dark:bg-gray-800 font-bold text-sm min-w-[160px] text-gray-700 dark:text-gray-200 align-middle">
+                <th rowSpan={2} className="border-r border-t border-l border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[140px] text-slate-700 dark:text-slate-200 align-middle">
                   My Habits
                 </th>
                 {monthWeeks.map((week, weekIndex) => (
                   <th
                     key={weekIndex}
                     colSpan={week.length}
-                    className={`border border-gray-300 dark:border-gray-600 py-0.5 px-0.5 text-center font-semibold text-[9px] text-gray-600 dark:text-gray-300 ${getWeekColor(weekIndex)}`}
+                    className={`border border-slate-200 dark:border-slate-700 py-0 px-0 text-center font-semibold text-[8px] text-slate-500 dark:text-slate-400 ${getWeekColor(weekIndex)}`}
                   >
                     {weekIndex < 4 ? `W${weekIndex + 1}` : 'Ex'}
                   </th>
@@ -385,13 +350,13 @@ export default function MonthlyView() {
                     return (
                       <th
                         key={`${weekIndex}-${dayIndex}`}
-                        className={`border border-gray-300 dark:border-gray-600 py-0.5 px-0 text-center text-[8px] font-medium min-w-[28px] ${isToday
-                            ? "bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-700 dark:border-indigo-600"
-                            : `${getWeekColor(weekIndex)} text-gray-600 dark:text-gray-400`
+                        className={`border border-slate-200 dark:border-slate-700 py-0 px-0 text-center text-[7px] font-medium ${isToday
+                            ? "bg-indigo-500 text-white"
+                            : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
                           }`}
                       >
-                        <div className={isToday ? "opacity-90" : "opacity-70"}>{getDayName(date)}</div>
-                        <div className={`font-semibold text-[9px] ${isToday ? "font-bold" : ""}`}>{date.getDate()}</div>
+                        <div className={isToday ? "" : "opacity-70"}>{getDayName(date)}</div>
+                        <div className="font-semibold text-[8px]">{date.getDate()}</div>
                       </th>
                     );
                   })
@@ -423,19 +388,18 @@ export default function MonthlyView() {
         </DndContext>
       </div>
 
-      {/* Progress Section */}
-      <div className="flex-shrink-0 bg-[#e8e8e8] dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-600 overflow-x-auto">
-        <table className="w-full border-collapse text-[11px]">
+      <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+        <table className="w-full border-collapse text-[9px] table-fixed">
           <tbody>
             <tr>
-              <td className="border-r border-gray-300 dark:border-gray-600 py-1 px-2 bg-[#e8e8e8] dark:bg-gray-800 font-bold text-xs text-gray-700 dark:text-gray-200 min-w-[160px]">
+              <td className="border-r border-slate-200 dark:border-slate-700 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[140px]">
                 Progress
               </td>
               {monthWeeks.map((week, weekIndex) =>
                 week.map((date, dayIndex) => {
                   const dateStr = formatDateToString(date);
                   const total = habits.length;
-                  if (total === 0) return <td key={`${weekIndex}-${dayIndex}`} className={`border border-gray-300 dark:border-gray-600 ${getWeekColor(weekIndex)}`}></td>;
+                  if (total === 0) return <td key={`${weekIndex}-${dayIndex}`} className={`border border-slate-200 dark:border-slate-700 ${getWeekColor(weekIndex)}`}></td>;
 
                   const completed = habits.filter(h =>
                     h.trackingType === 'checkbox' ? isHabitCompleted(h.id, dateStr) : getCounter(h.id, dateStr) > 0
@@ -443,47 +407,8 @@ export default function MonthlyView() {
                   const percent = Math.round((completed / total) * 100);
 
                   return (
-                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-gray-300 dark:border-gray-600 py-0.5 px-0 text-center text-[8px] text-gray-600 dark:text-gray-400 min-w-[28px] ${getWeekColor(weekIndex)}`}>
+                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center text-[7px] ${getWeekColor(weekIndex)} ${percent === 100 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {percent}%
-                    </td>
-                  );
-                })
-              )}
-            </tr>
-            <tr>
-              <td className="border-r border-gray-300 dark:border-gray-600 py-1 px-2 bg-[#e8e8e8] dark:bg-gray-800 font-bold text-xs text-gray-700 dark:text-gray-200 min-w-[160px]">
-                Done
-              </td>
-              {monthWeeks.map((week, weekIndex) =>
-                week.map((date, dayIndex) => {
-                  const dateStr = formatDateToString(date);
-                  const completed = habits.filter(h =>
-                    h.trackingType === 'checkbox' ? isHabitCompleted(h.id, dateStr) : getCounter(h.id, dateStr) > 0
-                  ).length;
-
-                  return (
-                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-gray-300 dark:border-gray-600 py-0.5 px-0 text-center text-[8px] text-gray-600 dark:text-gray-400 min-w-[28px] ${getWeekColor(weekIndex)}`}>
-                      {completed}
-                    </td>
-                  );
-                })
-              )}
-            </tr>
-            <tr>
-              <td className="border-r border-gray-300 dark:border-gray-600 py-1 px-2 bg-[#e8e8e8] dark:bg-gray-800 font-bold text-xs text-gray-700 dark:text-gray-200 min-w-[160px]">
-                Not Done
-              </td>
-              {monthWeeks.map((week, weekIndex) =>
-                week.map((date, dayIndex) => {
-                  const dateStr = formatDateToString(date);
-                  const total = habits.length;
-                  const completed = habits.filter(h =>
-                    h.trackingType === 'checkbox' ? isHabitCompleted(h.id, dateStr) : getCounter(h.id, dateStr) > 0
-                  ).length;
-
-                  return (
-                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-gray-300 dark:border-gray-600 py-0.5 px-0 text-center text-[8px] text-gray-600 dark:text-gray-400 min-w-[28px] ${getWeekColor(weekIndex)}`}>
-                      {total - completed}
                     </td>
                   );
                 })

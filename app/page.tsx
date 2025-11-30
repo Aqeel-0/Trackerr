@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import AddHabitForm from "@/components/AddHabitForm";
 import MonthlyView from "@/components/MonthlyView";
-import AnalyticsView from "@/components/AnalyticsView";
 import Sidebar from "@/components/Sidebar";
 import Modal from "@/components/Modal";
+
+const AnalyticsView = dynamic(() => import("@/components/AnalyticsView"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex items-center justify-center">
+      <div className="animate-pulse text-slate-400">Loading analytics...</div>
+    </div>
+  ),
+});
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<"tracker" | "analytics">("tracker");
@@ -16,38 +25,33 @@ export default function Home() {
     setFormattedDate(
       new Date().toLocaleDateString(undefined, { 
         weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
+        month: 'short', 
         day: 'numeric' 
       })
     );
   }, []);
 
   return (
-    <main className="h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 flex">
-      {/* Sidebar Navigation */}
+    <main className="h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 flex">
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
         onAddHabit={() => setIsAddModalOpen(true)}
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Header - Optional, for page titles or dates */}
-        <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 flex-shrink-0">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            {currentView === "tracker" ? "Habit Tracker" : "Analytics Dashboard"}
+        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 flex-shrink-0">
+          <h1 className="text-lg font-bold text-slate-800 dark:text-white">
+            {currentView === "tracker" ? "Habit Tracker" : "Analytics"}
           </h1>
-          <div className="text-sm text-gray-500 dark:text-gray-400 min-h-[20px]">
+          <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">
             {formattedDate}
           </div>
         </header>
 
-        {/* Content */}
-        <div className={`flex-1 overflow-auto ${currentView === 'analytics' ? 'p-4 lg:p-6' : ''}`}>
+        <div className={`flex-1 overflow-auto ${currentView === 'analytics' ? '' : ''}`}>
           {currentView === "tracker" ? (
-            <div className="h-full bg-white dark:bg-gray-800 shadow-sm border-l border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="h-full bg-white dark:bg-slate-900 overflow-hidden">
               <MonthlyView />
             </div>
           ) : (
@@ -58,7 +62,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Add Habit Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
