@@ -25,6 +25,7 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
   const [trackingType, setTrackingType] = useState<TrackingType>("checkbox");
   const [showPresets, setShowPresets] = useState(true);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [presetLoaded, setPresetLoaded] = useState(false);
 
   const capitalizeFirstLetter = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);

@@ -412,7 +412,6 @@ function TotalProgressChart({
           <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{averageCompletion}%</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Average</div>
         </div>
-      </div>
 
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
