@@ -3,130 +3,224 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Habit, HabitCompletion, HabitContextType, CheckboxStats, CounterStats } from "@/types/habit";
 import { formatDateToString, calculateStreak } from "@/utils/dateUtils";
+import { useAuth } from "./AuthContext";
+import { createClient } from "@/lib/supabase/client";
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
-
-function generateUUID(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = crypto.getRandomValues(new Uint8Array(1))[0] % 16;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-const STORAGE_KEYS = {
-  HABITS: "habit-tracker-habits",
-  COMPLETIONS: "habit-tracker-completions",
-};
 
 export function HabitProvider({ children }: { children: React.ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { user } = useAuth();
+  const supabase = createClient();
 
-  // Load data from localStorage on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedHabits = localStorage.getItem(STORAGE_KEYS.HABITS);
-        const storedCompletions = localStorage.getItem(STORAGE_KEYS.COMPLETIONS);
+    if (!user) {
+      setIsLoaded(false);
+      return;
+    }
 
-        if (storedHabits) {
-          setHabits(JSON.parse(storedHabits));
+    const loadData = async () => {
+      try {
+        const [habitsResult, completionsResult] = await Promise.all([
+          supabase
+            .from('habits')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('display_order'),
+          supabase
+            .from('habit_completions')
+            .select('*')
+            .eq('user_id', user.id)
+        ]);
+
+        if (habitsResult.error) {
+          console.error('Error loading habits:', habitsResult.error);
         }
-        if (storedCompletions) {
-          setCompletions(JSON.parse(storedCompletions));
+        if (completionsResult.error) {
+          console.error('Error loading completions:', completionsResult.error);
+        }
+
+        if (habitsResult.data) {
+          const mappedHabits = habitsResult.data.map((h: any) => ({
+            id: h.id,
+            user_id: h.user_id,
+            name: h.name,
+            description: h.description,
+            color: h.color,
+            icon: h.icon,
+            trackingType: h.tracking_type as "checkbox" | "counter",
+            targetCount: h.target_count,
+            unit: h.unit,
+            displayOrder: h.display_order,
+            createdAt: h.created_at,
+            updatedAt: h.updated_at
+          }));
+          setHabits(mappedHabits);
+        }
+
+        if (completionsResult.data) {
+          const mappedCompletions = completionsResult.data.map((c: any) => ({
+            id: c.id,
+            habitId: c.habit_id,
+            user_id: c.user_id,
+            date: c.date,
+            completed: c.completed,
+            count: c.count,
+            createdAt: c.created_at,
+            updatedAt: c.updated_at
+          }));
+          setCompletions(mappedCompletions);
         }
       } catch (error) {
-        console.error("Error loading data from localStorage:", error);
+        console.error("Error loading data from Supabase:", error);
       } finally {
         setIsLoaded(true);
       }
-    }
-  }, []);
+    };
 
-  // Save habits to localStorage whenever they change
-  useEffect(() => {
-    if (isLoaded && typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits));
-      } catch (error) {
-        console.error("Error saving habits to localStorage:", error);
-      }
-    }
-  }, [habits, isLoaded]);
+    loadData();
 
-  // Save completions to localStorage whenever they change
-  useEffect(() => {
-    if (isLoaded && typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEYS.COMPLETIONS, JSON.stringify(completions));
-      } catch (error) {
-        console.error("Error saving completions to localStorage:", error);
-      }
-    }
-  }, [completions, isLoaded]);
+    const habitsSubscription = supabase
+      .channel('habits-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'habits', filter: `user_id=eq.${user.id}` },
+        () => loadData()
+      )
+      .subscribe();
 
-  const addHabit = useCallback((habitData: Omit<Habit, "id" | "createdAt">) => {
-    const newHabit: Habit = {
+    const completionsSubscription = supabase
+      .channel('completions-changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'habit_completions', filter: `user_id=eq.${user.id}` },
+        () => loadData()
+      )
+      .subscribe();
+
+    return () => {
+      habitsSubscription.unsubscribe();
+      completionsSubscription.unsubscribe();
+    };
+  }, [user, supabase]);
+
+  const addHabit = useCallback(async (habitData: Omit<Habit, "id" | "createdAt" | "user_id" | "displayOrder">) => {
+    if (!user) {
+      console.error('addHabit: No user available!');
+      return;
+    }
+
+    const maxOrder = habits.length > 0 ? Math.max(...habits.map(h => h.displayOrder)) : -1;
+    const newHabit = {
+      user_id: user.id,
+      name: habitData.name,
+      description: habitData.description,
+      color: habitData.color,
+      icon: habitData.icon,
+      tracking_type: habitData.trackingType,
+      target_count: habitData.targetCount,
+      unit: habitData.unit,
+      display_order: maxOrder + 1
+    };
+
+    const tempHabit = {
       ...habitData,
-      id: generateUUID(),
+      id: 'temp-' + Date.now(),
+      user_id: user.id,
+      displayOrder: maxOrder + 1,
       createdAt: new Date().toISOString(),
     };
-    setHabits((prev) => [...prev, newHabit]);
-  }, []);
 
-  const deleteHabit = useCallback((id: string) => {
+    setHabits((prev) => [...prev, tempHabit]);
+
+    try {
+      const { data, error } = await supabase
+        .from('habits')
+        .insert(newHabit)
+        .select();
+      
+      if (error) {
+        console.error('addHabit: Supabase error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("addHabit: Error adding habit:", error);
+      setHabits((prev) => prev.filter(h => !h.id.startsWith('temp-')));
+    }
+  }, [user, habits, supabase]);
+
+  const deleteHabit = useCallback(async (id: string) => {
+    if (!user) return;
+
     setHabits((prev) => prev.filter((habit) => habit.id !== id));
     setCompletions((prev) => prev.filter((completion) => completion.habitId !== id));
-  }, []);
 
-  const toggleCompletion = useCallback((habitId: string, date: string) => {
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error deleting habit:", error);
+    }
+  }, [user, supabase]);
+
+  const toggleCompletion = useCallback(async (habitId: string, date: string) => {
+    if (!user) return;
+
+    const existing = completions.find(c => c.habitId === habitId && c.date === date);
+    const newCompleted = existing ? !existing.completed : true;
+
     setCompletions((prev) => {
-      const existingIndex = prev.findIndex(
-        (c) => c.habitId === habitId && c.date === date
-      );
-
+      const existingIndex = prev.findIndex(c => c.habitId === habitId && c.date === date);
       if (existingIndex >= 0) {
-        // Toggle existing completion
         const newCompletions = [...prev];
         newCompletions[existingIndex] = {
           ...newCompletions[existingIndex],
-          completed: !newCompletions[existingIndex].completed,
+          completed: newCompleted,
         };
         return newCompletions;
       } else {
-        // Add new completion
         return [
           ...prev,
           {
+            id: 'temp-' + Date.now(),
             habitId,
+            user_id: user.id,
             date,
             completed: true,
           },
         ];
       }
     });
-  }, []);
 
-  const setCounter = useCallback((habitId: string, date: string, count: number) => {
+    try {
+      const { error } = await supabase
+        .from('habit_completions')
+        .upsert({
+          habit_id: habitId,
+          user_id: user.id,
+          date,
+          completed: newCompleted,
+        }, {
+          onConflict: 'habit_id,date'
+        });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error toggling completion:", error);
+    }
+  }, [user, completions, supabase]);
+
+  const setCounter = useCallback(async (habitId: string, date: string, count: number) => {
+    if (!user) return;
+
     setCompletions((prev) => {
-      const existingIndex = prev.findIndex(
-        (c) => c.habitId === habitId && c.date === date
-      );
-
+      const existingIndex = prev.findIndex(c => c.habitId === habitId && c.date === date);
       if (existingIndex >= 0) {
-        // Update existing completion
         const newCompletions = [...prev];
         newCompletions[existingIndex] = {
           ...newCompletions[existingIndex],
@@ -135,11 +229,12 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         };
         return newCompletions;
       } else {
-        // Add new completion
         return [
           ...prev,
           {
+            id: 'temp-' + Date.now(),
             habitId,
+            user_id: user.id,
             date,
             completed: count > 0,
             count,
@@ -147,7 +242,25 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         ];
       }
     });
-  }, []);
+
+    try {
+      const { error } = await supabase
+        .from('habit_completions')
+        .upsert({
+          habit_id: habitId,
+          user_id: user.id,
+          date,
+          count,
+          completed: count > 0,
+        }, {
+          onConflict: 'habit_id,date'
+        });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error setting counter:", error);
+    }
+  }, [user, supabase]);
 
   const getCounter = useCallback(
     (habitId: string, date: string): number => {
@@ -526,9 +639,29 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
     [habits, completions]
   );
 
-  const reorderHabits = useCallback((newOrder: Habit[]) => {
+  const reorderHabits = useCallback(async (newOrder: Habit[]) => {
+    if (!user) return;
+
     setHabits(newOrder);
-  }, []);
+
+    try {
+      const updates = newOrder.map((habit, index) => ({
+        id: habit.id,
+        user_id: user.id,
+        display_order: index
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('habits')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id)
+          .eq('user_id', user.id);
+      }
+    } catch (error) {
+      console.error("Error reordering habits:", error);
+    }
+  }, [user, supabase]);
 
   const value: HabitContextType = {
     habits,

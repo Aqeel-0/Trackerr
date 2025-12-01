@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import AddHabitForm from "@/components/AddHabitForm";
 import MonthlyView from "@/components/MonthlyView";
 import Sidebar from "@/components/Sidebar";
 import Modal from "@/components/Modal";
+import ProfileMenu from "@/components/ProfileMenu";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AnalyticsView = dynamic(() => import("@/components/AnalyticsView"), {
   ssr: false,
@@ -18,11 +21,19 @@ const AnalyticsView = dynamic(() => import("@/components/AnalyticsView"), {
 });
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [currentView, setCurrentView] = useState<"tracker" | "analytics">("tracker");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [formattedDate, setFormattedDate] = useState("");
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     setFormattedDate(
@@ -33,6 +44,21 @@ export default function Home() {
       })
     );
   }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <main className="h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 flex">
@@ -71,10 +97,9 @@ export default function Home() {
               {formattedDate}
             </div>
             
-            {/* Dark Mode Toggle - All sizes */}
             <button
               onClick={toggleTheme}
-              className="p-2 -mr-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === "light" ? (
@@ -95,6 +120,8 @@ export default function Home() {
                 </svg>
               )}
             </button>
+
+            <ProfileMenu />
           </div>
         </header>
 
