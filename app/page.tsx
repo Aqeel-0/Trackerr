@@ -72,7 +72,7 @@ export default function Home() {
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 flex-shrink-0">
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 flex-shrink-0">
           <div className="flex items-center gap-3">
             {/* Mobile Hamburger Button - Left side */}
             <button
@@ -143,7 +143,7 @@ export default function Home() {
           <div className="flex items-center justify-around h-16 px-4 relative">
             {/* Logo/Brand */}
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
-              N
+              T
             </div>
 
             {/* Tracker Tab */}

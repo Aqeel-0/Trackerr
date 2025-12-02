@@ -73,8 +73,8 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
         >
           Quick Pick
         </button>
-        <button
-          type="button"
+            <button
+              type="button"
           onClick={() => setMode("custom")}
           className={`flex-1 py-2.5 px-4 text-sm font-semibold rounded-lg transition-all duration-200 ${
             mode === "custom"
@@ -83,8 +83,8 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
           }`}
         >
           Custom
-        </button>
-      </div>
+            </button>
+          </div>
 
       {mode === "preset" ? (
         <div className="space-y-3">
@@ -147,68 +147,68 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
           {showIconPicker && (
             <div className="p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl animate-scale-in">
               <div className="grid grid-cols-8 gap-1.5 max-h-32 overflow-y-auto">
-                {ICON_OPTIONS.map((iconOption, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setIcon(iconOption);
-                      setShowIconPicker(false);
-                    }}
+              {ICON_OPTIONS.map((iconOption, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setIcon(iconOption);
+                    setShowIconPicker(false);
+                  }}
                     className={`w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-all active:scale-90 ${
                       icon === iconOption
                         ? "bg-indigo-500 text-white"
                         : "hover:bg-white dark:hover:bg-slate-600"
                     }`}
-                  >
-                    {iconOption}
-                  </button>
-                ))}
+                >
+                  {iconOption}
+                </button>
+              ))}
               </div>
             </div>
           )}
 
           {/* Type Selection - Segmented Control Style */}
-          <div>
+        <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 uppercase tracking-wide">
               Tracking Type
-            </label>
+          </label>
             <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setTrackingType("checkbox")}
+            <button
+              type="button"
+              onClick={() => setTrackingType("checkbox")}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-200 ${
-                  trackingType === "checkbox"
+                trackingType === "checkbox"
                     ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
                     : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
+              }`}
+            >
                 <span className="text-lg">✓</span>
                 <span className="text-sm font-semibold">Checkbox</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTrackingType("counter")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTrackingType("counter")}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-200 ${
-                  trackingType === "counter"
+                trackingType === "counter"
                     ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
                     : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
+              }`}
+            >
                 <span className="text-lg">#</span>
                 <span className="text-sm font-semibold">Counter</span>
-              </button>
-            </div>
+            </button>
           </div>
+        </div>
 
           {/* Submit Button */}
           <button 
             type="submit" 
             className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white py-3.5 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all duration-200 active:scale-[0.98]"
           >
-            Create Habit
-          </button>
-        </form>
+          Create Habit
+        </button>
+      </form>
       )}
     </div>
   );

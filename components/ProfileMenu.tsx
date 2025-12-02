@@ -2,10 +2,12 @@
 
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 
 export default function ProfileMenu() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -30,8 +32,13 @@ export default function ProfileMenu() {
     setIsOpen(false);
   };
 
-  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const handleViewProfile = () => {
+    setIsOpen(false);
+    router.push('/profile');
+  };
+
+  const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0] || 'User';
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -66,7 +73,7 @@ export default function ProfileMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-50">
           <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
             <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
               {displayName}
@@ -77,8 +84,21 @@ export default function ProfileMenu() {
           </div>
 
           <button
+            onClick={handleViewProfile}
+            className="w-full px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            View Profile
+          </button>
+
+          <div className="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+
+          <button
             onClick={handleSignOut}
-            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+            className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

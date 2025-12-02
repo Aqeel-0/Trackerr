@@ -253,15 +253,15 @@ function CompactWeekView({
     if (isMobileView) return "bg-slate-100 dark:bg-slate-800";
     const weekIdx = Math.floor(idx / 7);
     return weekIdx % 2 === 0
-      ? "bg-[#ebebeb] dark:bg-gray-700"
-      : "bg-[#dedede] dark:bg-gray-600";
+      ? "bg-[#f5f5f5] dark:bg-slate-800"
+      : "bg-[#e5e5e5] dark:bg-slate-700";
   };
 
   const getCellBg = (weekIdx: number) => {
     if (isMobileView) return "bg-white dark:bg-slate-900";
     return weekIdx % 2 === 0
-      ? "bg-[#f5f5f5] dark:bg-gray-800"
-      : "bg-[#e8e8e8] dark:bg-gray-700";
+      ? "bg-[#f5f5f5] dark:bg-slate-800"
+      : "bg-[#e5e5e5] dark:bg-slate-700";
   };
 
   return (
@@ -462,8 +462,8 @@ export default function MonthlyView() {
 
   const getWeekColor = (index: number) => {
     return index % 2 === 0
-      ? "bg-[#f5f5f5] dark:bg-gray-800"
-      : "bg-[#e8e8e8] dark:bg-gray-700";
+      ? "bg-[#f5f5f5] dark:bg-slate-800"
+      : "bg-[#e5e5e5] dark:bg-slate-700";
   };
 
   if (habits.length === 0) {
@@ -585,7 +585,7 @@ export default function MonthlyView() {
           <table className="w-full border-collapse text-[10px] table-fixed">
             <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-800">
               <tr>
-                <th rowSpan={2} className="border-r border-t border-l border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[140px] text-slate-700 dark:text-slate-200 align-middle">
+                <th rowSpan={2} className="border-r border-t border-l border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[160px] text-slate-700 dark:text-slate-200 align-middle">
                   My Habits
                 </th>
                 {monthWeeks.map((week, weekIndex) => (
@@ -629,7 +629,7 @@ export default function MonthlyView() {
                     habit={habit}
                     dates={monthWeeks.flat()}
                     today={today}
-                    getWeekColor={(idx) => getWeekColor(Math.floor(idx / 7))}
+                    getWeekColor={getWeekColor}
                     onDelete={handleDelete}
                     toggleCompletion={toggleCompletion}
                     isHabitCompleted={isHabitCompleted}
@@ -647,7 +647,7 @@ export default function MonthlyView() {
         <table className="w-full border-collapse text-[9px] table-fixed">
           <tbody>
             <tr>
-              <td className="border-r border-slate-200 dark:border-slate-700 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[140px]">
+              <td className="border-r border-slate-200 dark:border-slate-700 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[160px]">
                 Progress
               </td>
               {monthWeeks.map((week, weekIndex) =>

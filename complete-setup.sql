@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   username TEXT UNIQUE,
   display_name TEXT,
   avatar_url TEXT,
+  phone TEXT,
+  address TEXT,
   timezone TEXT DEFAULT 'UTC',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
