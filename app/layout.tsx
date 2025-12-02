@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { HabitProvider } from "@/contexts/HabitContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
@@ -30,9 +31,11 @@ export default function RootLayout({
     <html lang="en" className={`${dmSans.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased">
         <ThemeProvider>
-          <HabitProvider>
-            {children}
-          </HabitProvider>
+          <AuthProvider>
+            <HabitProvider>
+              {children}
+            </HabitProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

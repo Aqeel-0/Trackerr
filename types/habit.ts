@@ -2,21 +2,46 @@ export type TrackingType = "checkbox" | "counter";
 
 export interface Habit {
   id: string;
+  user_id: string;
   name: string;
   description?: string;
   color: string;
   icon: string;
   trackingType: TrackingType;
   createdAt: string;
+  updatedAt?: string;
   targetCount?: number;
   unit?: string;
+  displayOrder: number;
 }
 
 export interface HabitCompletion {
+  id?: string;
   habitId: string;
+  user_id: string;
   date: string;
   completed: boolean;
   count?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Profile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  timezone: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string | null;
+  user_metadata: {
+    name?: string;
+    avatar_url?: string;
+  };
 }
 
 export interface CheckboxStats {
@@ -51,10 +76,10 @@ export interface CounterStats {
 export interface HabitContextType {
   habits: Habit[];
   completions: HabitCompletion[];
-  addHabit: (habit: Omit<Habit, "id" | "createdAt">) => void;
-  deleteHabit: (id: string) => void;
-  toggleCompletion: (habitId: string, date: string) => void;
-  setCounter: (habitId: string, date: string, count: number) => void;
+  addHabit: (habit: Omit<Habit, "id" | "createdAt" | "user_id" | "displayOrder">) => Promise<void>;
+  deleteHabit: (id: string) => Promise<void>;
+  toggleCompletion: (habitId: string, date: string) => Promise<void>;
+  setCounter: (habitId: string, date: string, count: number) => Promise<void>;
   getCounter: (habitId: string, date: string) => number;
   isHabitCompleted: (habitId: string, date: string) => boolean;
   getHabitStats: (habitId: string) => {
@@ -66,5 +91,5 @@ export interface HabitContextType {
   };
   getCheckboxStats: (habitId: string) => CheckboxStats;
   getCounterStats: (habitId: string) => CounterStats;
-  reorderHabits: (newOrder: Habit[]) => void;
+  reorderHabits: (newOrder: Habit[]) => Promise<void>;
 }
