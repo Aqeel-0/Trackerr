@@ -100,7 +100,7 @@ function SortableHabitRow({
             className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hidden sm:block"
             title="Delete habit"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
         </div>
       </td>
@@ -116,8 +116,8 @@ function SortableHabitRow({
             key={dayIndex}
             className={`border p-0 text-center h-full relative ${isToday
               ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
-              : `${getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
-            }`}
+              : `${getWeekColor(weekIndex)} border-slate-300 dark:border-slate-600`
+              }`}
           >
             {habit.trackingType === "checkbox" ? (
               <div className={`flex items-center justify-center h-full w-full ${isMobileView ? 'p-1' : 'p-0.5'}`}>
@@ -156,7 +156,7 @@ function SortableHabitRow({
                   className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
                     ? "opacity-20 cursor-not-allowed text-slate-400"
                     : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                  }`}
+                    }`}
                 >
                   −
                 </button>
@@ -187,7 +187,7 @@ function SortableHabitRow({
                   className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture
                     ? "opacity-20 cursor-not-allowed text-slate-400"
                     : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                  }`}
+                    }`}
                 >
                   +
                 </button>
@@ -301,11 +301,10 @@ function CompactWeekView({
               return (
                 <th
                   key={idx}
-                  className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${
-                    isToday
+                  className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${isToday
                       ? "bg-indigo-500 text-white"
                       : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
-                  }`}
+                    }`}
                 >
                   <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
                   <div className={`font-bold ${isMobileView ? 'text-xs' : 'text-sm'}`}>{date.getDate()}</div>
@@ -352,7 +351,7 @@ export default function MonthlyView() {
   useEffect(() => {
     setCurrentDate(new Date());
     setToday(new Date());
-    
+
     const checkViewMode = () => {
       const width = window.innerWidth;
       if (width < 640) {
@@ -363,7 +362,7 @@ export default function MonthlyView() {
         setViewMode('desktop');
       }
     };
-    
+
     checkViewMode();
     window.addEventListener('resize', checkViewMode);
     return () => window.removeEventListener('resize', checkViewMode);
@@ -416,7 +415,7 @@ export default function MonthlyView() {
     if (!today) return [];
     const currentWeek = getCurrentWeek();
     const dates: Date[] = [];
-    
+
     for (let w = 0; w < weeksToShow; w++) {
       for (let d = 0; d < 7; d++) {
         const newDate = new Date(currentWeek[d]);
@@ -430,14 +429,14 @@ export default function MonthlyView() {
   const getWeekLabel = (weeksToShow: number): string => {
     const dates = getWeekDates(weeksToShow);
     if (dates.length === 0) return "";
-    
+
     const start = dates[0];
     const end = dates[dates.length - 1];
-    
+
     if (weekOffset === 0 && weeksToShow === 1) return "This Week";
     if (weekOffset === -1 && weeksToShow === 1) return "Last Week";
     if (weekOffset === 1 && weeksToShow === 1) return "Next Week";
-    
+
     return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
@@ -481,7 +480,7 @@ export default function MonthlyView() {
   if (viewMode === 'mobile' || viewMode === 'tablet') {
     const weeksToShow = viewMode === 'mobile' ? 1 : 2;
     const weekDates = getWeekDates(weeksToShow);
-    
+
     return (
       <div className="h-full flex flex-col bg-white dark:bg-slate-900">
         {/* Header */}
@@ -585,14 +584,14 @@ export default function MonthlyView() {
           <table className="w-full border-collapse text-[10px] table-fixed">
             <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-800">
               <tr>
-                <th rowSpan={2} className="border-r border-t border-l border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[160px] text-slate-700 dark:text-slate-200 align-middle">
+                <th rowSpan={2} className="border-r border-t border-l border-slate-300 dark:border-slate-600 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[160px] text-slate-700 dark:text-slate-200 align-middle">
                   My Habits
                 </th>
                 {monthWeeks.map((week, weekIndex) => (
                   <th
                     key={weekIndex}
                     colSpan={week.length}
-                    className={`border border-slate-200 dark:border-slate-700 py-0 px-0 text-center font-semibold text-[8px] text-slate-500 dark:text-slate-400 ${getWeekColor(weekIndex)}`}
+                    className={`border border-slate-300 dark:border-slate-600 py-0 px-0 text-center font-semibold text-[8px] text-slate-500 dark:text-slate-400 ${getWeekColor(weekIndex)}`}
                   >
                     {weekIndex < 4 ? `W${weekIndex + 1}` : 'Ex'}
                   </th>
@@ -605,9 +604,9 @@ export default function MonthlyView() {
                     return (
                       <th
                         key={`${weekIndex}-${dayIndex}`}
-                        className={`border border-slate-200 dark:border-slate-700 py-0 px-0 text-center text-[7px] font-medium ${isToday
-                            ? "bg-indigo-500 text-white"
-                            : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
+                        className={`border border-slate-300 dark:border-slate-600 py-0 px-0 text-center text-[7px] font-medium ${isToday
+                          ? "bg-indigo-500 text-white"
+                          : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
                           }`}
                       >
                         <div className={isToday ? "" : "opacity-70"}>{getDayName(date)}</div>
@@ -647,14 +646,14 @@ export default function MonthlyView() {
         <table className="w-full border-collapse text-[9px] table-fixed">
           <tbody>
             <tr>
-              <td className="border-r border-slate-200 dark:border-slate-700 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[160px]">
+              <td className="border-r border-slate-300 dark:border-slate-600 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[160px]">
                 Progress
               </td>
               {monthWeeks.map((week, weekIndex) =>
                 week.map((date, dayIndex) => {
                   const dateStr = formatDateToString(date);
                   const total = habits.length;
-                  if (total === 0) return <td key={`${weekIndex}-${dayIndex}`} className={`border border-slate-200 dark:border-slate-700 ${getWeekColor(weekIndex)}`}></td>;
+                  if (total === 0) return <td key={`${weekIndex}-${dayIndex}`} className={`border border-slate-300 dark:border-slate-600 ${getWeekColor(weekIndex)}`}></td>;
 
                   const completed = habits.filter(h =>
                     h.trackingType === 'checkbox' ? isHabitCompleted(h.id, dateStr) : getCounter(h.id, dateStr) > 0
@@ -662,7 +661,7 @@ export default function MonthlyView() {
                   const percent = Math.round((completed / total) * 100);
 
                   return (
-                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center text-[7px] ${getWeekColor(weekIndex)} ${percent === 100 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-slate-300 dark:border-slate-600 py-0.5 px-0 text-center text-[7px] ${getWeekColor(weekIndex)} ${percent === 100 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {percent}%
                     </td>
                   );

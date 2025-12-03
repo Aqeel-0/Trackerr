@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import AddHabitForm from "@/components/AddHabitForm";
 import MonthlyView from "@/components/MonthlyView";
@@ -23,7 +23,9 @@ const AnalyticsView = dynamic(() => import("@/components/AnalyticsView"), {
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [currentView, setCurrentView] = useState<"tracker" | "analytics">("tracker");
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get('view') as "tracker" | "analytics" | null;
+  const [currentView, setCurrentView] = useState<"tracker" | "analytics">(initialView === "analytics" ? "analytics" : "tracker");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [formattedDate, setFormattedDate] = useState("");
@@ -37,13 +39,21 @@ export default function Home() {
 
   useEffect(() => {
     setFormattedDate(
-      new Date().toLocaleDateString(undefined, { 
-        weekday: 'long', 
-        month: 'short', 
-        day: 'numeric' 
+      new Date().toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric'
       })
     );
   }, []);
+
+  const handleSetView = (view: "tracker" | "analytics" | "profile") => {
+    if (view === "profile") {
+      router.push('/profile');
+    } else {
+      setCurrentView(view);
+    }
+  };
 
   if (loading) {
     return (
@@ -64,13 +74,13 @@ export default function Home() {
     <main className="h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 flex">
       <Sidebar
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={handleSetView}
         onAddHabit={() => setIsAddModalOpen(true)}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
 
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden md:ml-20 xl:ml-64 transition-all duration-300">
         {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -86,17 +96,17 @@ export default function Home() {
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-            
+
             <h1 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white">
               {currentView === "tracker" ? "Habit Tracker" : "Analytics"}
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 font-medium">
               {formattedDate}
             </div>
-            
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -149,11 +159,10 @@ export default function Home() {
             {/* Tracker Tab */}
             <button
               onClick={() => setCurrentView("tracker")}
-              className={`flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all ${
-                currentView === "tracker"
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-400 dark:text-slate-500"
-              }`}
+              className={`flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all ${currentView === "tracker"
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-slate-400 dark:text-slate-500"
+                }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1"></rect>
@@ -179,11 +188,10 @@ export default function Home() {
             {/* Analytics Tab */}
             <button
               onClick={() => setCurrentView("analytics")}
-              className={`flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all ${
-                currentView === "analytics"
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-400 dark:text-slate-500"
-              }`}
+              className={`flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all ${currentView === "analytics"
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-slate-400 dark:text-slate-500"
+                }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 3v18h18"></path>
@@ -204,6 +212,7 @@ export default function Home() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         title="Create New Habit"
+        contentClassName="flex-1 flex flex-col overflow-hidden p-0"
       >
         <AddHabitForm onSuccess={() => setIsAddModalOpen(false)} />
       </Modal>

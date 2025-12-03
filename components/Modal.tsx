@@ -7,9 +7,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  contentClassName?: string;
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, contentClassName }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -39,17 +40,16 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
       <div
         ref={modalRef}
-        className={`bg-white dark:bg-slate-800 shadow-2xl w-full border border-slate-200 dark:border-slate-700 flex flex-col ${
-          isMobile 
-            ? 'rounded-t-3xl animate-slide-up max-h-[95vh]' 
+        className={`bg-white dark:bg-slate-800 shadow-2xl w-full border border-slate-200 dark:border-slate-700 flex flex-col ${isMobile
+            ? 'rounded-t-3xl animate-slide-up max-h-[95vh]'
             : 'rounded-2xl animate-scale-in max-w-lg max-h-[85vh]'
-        }`}
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         {isMobile && (
@@ -58,12 +58,10 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
           </div>
         )}
 
-        <div className={`flex items-center justify-between border-b border-slate-200 dark:border-slate-700 flex-shrink-0 ${
-          isMobile ? 'px-5 py-3' : 'p-5'
-        }`}>
-          <h2 className={`font-bold text-slate-900 dark:text-white ${
-            isMobile ? 'text-lg' : 'text-xl'
+        <div className={`flex items-center justify-between border-b border-slate-200 dark:border-slate-700 flex-shrink-0 ${isMobile ? 'px-5 py-3' : 'p-5'
           }`}>
+          <h2 className={`font-bold text-slate-900 dark:text-white ${isMobile ? 'text-lg' : 'text-xl'
+            }`}>
             {title}
           </h2>
           <button
@@ -86,9 +84,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             </svg>
           </button>
         </div>
-        <div className={`flex-1 min-h-0 overflow-y-auto safe-bottom ${
-          isMobile ? 'p-5' : 'p-6'
-        }`}>
+        <div className={contentClassName || `flex-1 min-h-0 overflow-y-auto safe-bottom ${isMobile ? 'p-5' : 'p-6'}`}>
           {children}
         </div>
       </div>

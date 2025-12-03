@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS habits (
   tracking_type TEXT NOT NULL CHECK (tracking_type IN ('checkbox', 'counter')),
   target_count INTEGER,
   unit TEXT,
+  category TEXT,
   display_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

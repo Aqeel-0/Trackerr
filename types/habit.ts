@@ -13,6 +13,7 @@ export interface Habit {
   targetCount?: number;
   unit?: string;
   displayOrder: number;
+  category?: string;
 }
 
 export interface HabitCompletion {
