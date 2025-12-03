@@ -68,10 +68,11 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             user_id: c.user_id,
             date: c.date,
             completed: c.completed,
-            count: c.count,
+            count: c.count ?? 0, // Ensure count is never null/undefined
             createdAt: c.created_at,
             updatedAt: c.updated_at
           }));
+
           setCompletions(mappedCompletions);
         }
       } catch (error) {
@@ -356,7 +357,20 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const completionSet = new Set(completionDates);
 
       const today = new Date();
-      const createdDate = habit ? new Date(habit.createdAt) : today;
+      let createdDate = habit ? new Date(habit.createdAt) : today;
+
+      // Find the earliest date in completions (in case there's data before habit creation)
+      if (completionDates.length > 0) {
+        const earliestCompletion = completionDates.reduce((earliest, date) => {
+          return date < earliest ? date : earliest;
+        }, completionDates[0]);
+
+        const earliestDate = new Date(earliestCompletion);
+        if (earliestDate < createdDate) {
+          createdDate = earliestDate;
+        }
+      }
+
       const totalDays = Math.max(1, Math.floor(
         (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
       ) + 1);
@@ -482,21 +496,36 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const habitCompletions = completions.filter((c) => c.habitId === habitId);
 
       const today = new Date();
-      const createdDate = habit ? new Date(habit.createdAt) : today;
+      let createdDate = habit ? new Date(habit.createdAt) : today;
 
       const dailyData: { date: string; count: number }[] = [];
       const dateCountMap = new Map<string, number>();
 
       habitCompletions.forEach((c) => {
-        dateCountMap.set(c.date, c.count || 0);
+        // Use the count value, defaulting to 0 if undefined or null
+        const countValue = c.count ?? 0;
+        dateCountMap.set(c.date, countValue);
       });
+
+      // Find the earliest date in completions (in case there's data before habit creation)
+      if (habitCompletions.length > 0) {
+        const earliestCompletion = habitCompletions.reduce((earliest, c) => {
+          return c.date < earliest ? c.date : earliest;
+        }, habitCompletions[0].date);
+
+        const earliestDate = new Date(earliestCompletion);
+        if (earliestDate < createdDate) {
+          createdDate = earliestDate;
+        }
+      }
 
       const iterDate = new Date(createdDate);
       while (iterDate <= today) {
         const dateStr = formatDateToString(iterDate);
+        const countValue = dateCountMap.get(dateStr) ?? 0;
         dailyData.push({
           date: dateStr,
-          count: dateCountMap.get(dateStr) || 0
+          count: countValue
         });
         iterDate.setDate(iterDate.getDate() + 1);
       }
@@ -567,8 +596,16 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         dayCounts[i] > 0 ? total / dayCounts[i] : 0
       );
 
+      // Calculate current streak (allow today to be 0 without breaking streak)
       let currentStreak = 0;
-      for (let i = dailyData.length - 1; i >= 0; i--) {
+      let startIndex = dailyData.length - 1;
+
+      // If today has no data, start from yesterday
+      if (startIndex >= 0 && dailyData[startIndex].count === 0) {
+        startIndex--;
+      }
+
+      for (let i = startIndex; i >= 0; i--) {
         if (dailyData[i].count > 0) {
           currentStreak++;
         } else {

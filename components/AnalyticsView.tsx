@@ -194,12 +194,22 @@ function CheckboxHabitCard({
   stats: CheckboxStats;
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
+  // Calculate last 30 days completion rate
+  const last30Completed = stats.last30Days.filter(d => d.completed).length;
+  const last30Rate = Math.round((last30Completed / 30) * 100);
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
       <div className="p-3 sm:p-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-xl sm:text-2xl">{habit.icon}</span>
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{habit.name}</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl">{habit.icon}</span>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{habit.name}</h3>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: habit.color + '20' }}>
+            <span className="text-xs sm:text-sm font-bold" style={{ color: habit.color }}>{last30Rate}%</span>
+            <span className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400">30d</span>
+          </div>
         </div>
       </div>
 
@@ -230,7 +240,7 @@ function TrendLineChart({ data, color, unit }: { data: { date: string; count: nu
 
   return (
     <ResponsiveContainer width="100%" height={180}>
-      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id={`counterGradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.4} />
@@ -353,6 +363,7 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
     let periodLabel = '';
     let total = 0;
     let average = 0;
+    let peakDay = { date: '', count: 0 };
 
     if (viewMode === 'daily') {
       const now = new Date();
@@ -365,7 +376,7 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
       while (tempDate <= lastOfMonth && tempDate <= now) {
         const dateStr = formatDateToString(tempDate);
         const dataPoint = stats.dailyData.find(d => d.date === dateStr);
-        const count = dataPoint ? dataPoint.count : 0;
+        const count = dataPoint?.count ?? 0;
 
         chartData.push({
           date: dateStr,
@@ -374,6 +385,12 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
         });
 
         total += count;
+
+        // Track peak day for this period
+        if (count > peakDay.count) {
+          peakDay = { date: dateStr, count };
+        }
+
         tempDate.setDate(tempDate.getDate() + 1);
       }
 
@@ -392,7 +409,7 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
       while (tempDate <= lastOfMonth && tempDate <= now) {
         const dateStr = formatDateToString(tempDate);
         const dataPoint = stats.dailyData.find(d => d.date === dateStr);
-        const count = dataPoint ? dataPoint.count : 0;
+        const count = dataPoint?.count ?? 0;
 
         chartData.push({
           date: dateStr,
@@ -401,16 +418,22 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
         });
 
         total += count;
+
+        // Track peak day for this period
+        if (count > peakDay.count) {
+          peakDay = { date: dateStr, count };
+        }
+
         tempDate.setDate(tempDate.getDate() + 1);
       }
 
       average = chartData.length > 0 ? total / chartData.length : 0;
     }
 
-    return { chartData, periodLabel, total, average };
+    return { chartData, periodLabel, total, average, peakDay };
   };
 
-  const { chartData, periodLabel, total, average } = getViewData();
+  const { chartData, periodLabel, total, average, peakDay } = getViewData();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -487,10 +510,10 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
           </div>
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 text-center">
             <div className="text-sm sm:text-lg font-bold text-amber-600 dark:text-amber-400">
-              🏆 {stats.peakDay.count}
+              🏆 {peakDay.count}
             </div>
             <div className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400">
-              {formatPeakDate(stats.peakDay.date)}
+              {peakDay.count > 0 ? formatPeakDate(peakDay.date) : 'N/A'}
             </div>
           </div>
         </div>
@@ -545,22 +568,42 @@ function TotalProgressChart({
       ...d,
       label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      isPerfect: d.percentage === 100,
     };
   });
 
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: { dayName: string; percentage: number; completed: number; total: number } }>; label?: string }) => {
+  // Count perfect days
+  const perfectDays = chartData.filter(d => d.isPerfect).length;
+
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: { dayName: string; percentage: number; completed: number; total: number; isPerfect: boolean } }>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 sm:p-3">
-          <p className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{data.dayName}, {label}</p>
+          <p className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
+            {data.dayName}, {label} {data.isPerfect && '⭐'}
+          </p>
           <p className="text-lg sm:text-2xl font-bold mt-0.5 sm:mt-1" style={{ color: data.percentage >= 80 ? '#10b981' : data.percentage >= 50 ? '#f59e0b' : '#ef4444' }}>
             {data.percentage}%
           </p>
           <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
             {data.completed} of {data.total} habits
+            {data.isPerfect && ' • Perfect day!'}
           </p>
         </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom dot to show stars on perfect days
+  const CustomDot = (props: { cx?: number; cy?: number; payload?: { isPerfect: boolean } }) => {
+    const { cx, cy, payload } = props;
+    if (payload?.isPerfect && cx && cy) {
+      return (
+        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={12}>
+          ⭐
+        </text>
       );
     }
     return null;
@@ -571,7 +614,10 @@ function TotalProgressChart({
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
           <h3 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">This Month&apos;s Progress</h3>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {perfectDays > 0 && <span className="ml-2">• {perfectDays} perfect day{perfectDays > 1 ? 's' : ''} ⭐</span>}
+          </p>
         </div>
         <div className="text-right">
           <div className="text-xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">{averageCompletion}%</div>
@@ -580,7 +626,7 @@ function TotalProgressChart({
       </div>
 
       <ResponsiveContainer width="100%" height={200}>
-        <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+        <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -619,7 +665,7 @@ function TotalProgressChart({
             stroke="#6366f1"
             strokeWidth={2.5}
             fill="url(#progressGradient)"
-            dot={false}
+            dot={<CustomDot />}
             activeDot={{ r: 5, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }}
           />
           <Bar dataKey="percentage" fill="#6366f1" fillOpacity={0.1} radius={[2, 2, 0, 0]} />
@@ -668,12 +714,29 @@ function CategorySummaryCard({
 }) {
   if (habits.length === 0) return null;
 
-  const totalCompletions = habits.reduce((sum, h) => sum + getHabitStats(h.id).completedDays, 0);
-  const totalPossible = habits.reduce((sum, h) => sum + getHabitStats(h.id).totalDays, 0);
-  const completionRate = totalPossible > 0 ? Math.round((totalCompletions / totalPossible) * 100) : 0;
+  // Calculate last 7 days completion for this category
+  const today = new Date();
+  let last7DaysCompleted = 0;
+  let last7DaysPossible = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const dateStr = formatDateToString(date);
+
+    habits.forEach(habit => {
+      last7DaysPossible++;
+      if (habit.trackingType === 'checkbox') {
+        if (isHabitCompleted(habit.id, dateStr)) last7DaysCompleted++;
+      } else {
+        if (getCounter(habit.id, dateStr) > 0) last7DaysCompleted++;
+      }
+    });
+  }
+
+  const last7DaysRate = last7DaysPossible > 0 ? Math.round((last7DaysCompleted / last7DaysPossible) * 100) : 0;
 
   // Calculate this week's completion for this category
-  const today = new Date();
   const currentDayOfWeek = today.getDay();
   const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
   const weekStart = new Date(today);
@@ -699,6 +762,34 @@ function CategorySummaryCard({
 
   const weekRate = weekPossible > 0 ? Math.round((weekCompletions / weekPossible) * 100) : 0;
 
+  // Calculate last week's completion for trend comparison
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  let lastWeekCompletions = 0;
+  let lastWeekPossible = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(lastWeekStart);
+    date.setDate(lastWeekStart.getDate() + i);
+    const dateStr = formatDateToString(date);
+
+    habits.forEach(habit => {
+      lastWeekPossible++;
+      if (habit.trackingType === 'checkbox') {
+        if (isHabitCompleted(habit.id, dateStr)) lastWeekCompletions++;
+      } else {
+        if (getCounter(habit.id, dateStr) > 0) lastWeekCompletions++;
+      }
+    });
+  }
+
+  const lastWeekRate = lastWeekPossible > 0 ? Math.round((lastWeekCompletions / lastWeekPossible) * 100) : 0;
+
+  // Determine trend
+  const trendDiff = weekRate - lastWeekRate;
+  const trend = trendDiff > 5 ? 'up' : trendDiff < -5 ? 'down' : 'stable';
+
   return (
     <div
       className="bg-white dark:bg-gray-800 rounded-xl border-2 transition-all hover:shadow-lg cursor-pointer"
@@ -718,13 +809,18 @@ function CategorySummaryCard({
         <div className="grid grid-cols-2 gap-3">
           <div className="text-center p-2 rounded-lg" style={{ backgroundColor: category.color + '15' }}>
             <div className="text-2xl font-bold" style={{ color: category.color }}>
-              {completionRate}%
+              {last7DaysRate}%
             </div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">All-time</div>
+            <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Last 7 days</div>
           </div>
           <div className="text-center p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
-            <div className="text-2xl font-bold text-gray-700 dark:text-gray-300">
-              {weekRate}%
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                {weekRate}%
+              </span>
+              {trend === 'up' && <span className="text-green-500 text-sm">↑</span>}
+              {trend === 'down' && <span className="text-red-500 text-sm">↓</span>}
+              {trend === 'stable' && <span className="text-gray-400 text-sm">→</span>}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">This week</div>
           </div>
@@ -775,14 +871,89 @@ export default function AnalyticsView() {
     );
   }
 
-  const bestCurrentStreak = Math.max(...filteredHabits.map(h => getHabitStats(h.id).currentStreak), 0);
-  const bestStreakEver = Math.max(...filteredHabits.map(h => getHabitStats(h.id).longestStreak), 0);
+  // Declare today first
+  const today = new Date();
 
-  const totalDaysTracked = filteredHabits.reduce((sum, h) => sum + getHabitStats(h.id).totalDays, 0);
-  const totalCompletions = filteredHabits.reduce((sum, h) => sum + getHabitStats(h.id).completedDays, 0);
+  // Calculate today's progress
+  const todayStr = formatDateToString(today);
+  let todayCompleted = 0;
+  filteredHabits.forEach(habit => {
+    if (habit.trackingType === 'checkbox') {
+      if (isHabitCompleted(habit.id, todayStr)) todayCompleted++;
+    } else {
+      if (getCounter(habit.id, todayStr) > 0) todayCompleted++;
+    }
+  });
+  const todayTotal = filteredHabits.length;
+  const todayPercentage = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
+
+  // Calculate yesterday's progress for comparison
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = formatDateToString(yesterday);
+  let yesterdayCompleted = 0;
+  filteredHabits.forEach(habit => {
+    if (habit.trackingType === 'checkbox') {
+      if (isHabitCompleted(habit.id, yesterdayStr)) yesterdayCompleted++;
+    } else {
+      if (getCounter(habit.id, yesterdayStr) > 0) yesterdayCompleted++;
+    }
+  });
+  const yesterdayPercentage = todayTotal > 0 ? Math.round((yesterdayCompleted / todayTotal) * 100) : 0;
+  const todayTrend = todayPercentage - yesterdayPercentage;
+
+  // Calculate this week's progress
+  const currentDayOfWeek = today.getDay();
+  const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - daysFromMonday);
+
+  let weekCompleted = 0;
+  let weekPossible = 0;
+
+  for (let i = 0; i <= daysFromMonday; i++) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    const dateStr = formatDateToString(date);
+
+    filteredHabits.forEach(habit => {
+      weekPossible++;
+      if (habit.trackingType === 'checkbox') {
+        if (isHabitCompleted(habit.id, dateStr)) weekCompleted++;
+      } else {
+        if (getCounter(habit.id, dateStr) > 0) weekCompleted++;
+      }
+    });
+  }
+
+  const weekPercentage = weekPossible > 0 ? Math.round((weekCompleted / weekPossible) * 100) : 0;
+
+  // Calculate last week's progress for comparison
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  let lastWeekCompleted = 0;
+  let lastWeekPossible = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(lastWeekStart);
+    date.setDate(lastWeekStart.getDate() + i);
+    const dateStr = formatDateToString(date);
+
+    filteredHabits.forEach(habit => {
+      lastWeekPossible++;
+      if (habit.trackingType === 'checkbox') {
+        if (isHabitCompleted(habit.id, dateStr)) lastWeekCompleted++;
+      } else {
+        if (getCounter(habit.id, dateStr) > 0) lastWeekCompleted++;
+      }
+    });
+  }
+
+  const lastWeekPercentage = lastWeekPossible > 0 ? Math.round((lastWeekCompleted / lastWeekPossible) * 100) : 0;
+  const weekTrend = weekPercentage - lastWeekPercentage;
 
   const dailyProgressData: { date: string; percentage: number; completed: number; total: number }[] = [];
-  const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
@@ -885,35 +1056,96 @@ export default function AnalyticsView() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          <OverallStatsCard
-            title="Current Streak"
-            value={`${bestCurrentStreak}d`}
-            subtitle="Best active"
-            icon="🔥"
-            gradient="bg-gradient-to-br from-orange-500 to-red-600"
-          />
-          <OverallStatsCard
-            title="This Month"
-            value={`${overallAverageCompletion}%`}
-            subtitle="Avg completion"
-            icon="📈"
-            gradient="bg-gradient-to-br from-green-500 to-emerald-600"
-          />
-          <OverallStatsCard
-            title="Best Streak"
-            value={`${bestStreakEver}d`}
-            subtitle="All-time"
-            icon="🏆"
-            gradient="bg-gradient-to-br from-amber-500 to-orange-600"
-          />
-          <OverallStatsCard
-            title="Completions"
-            value={totalCompletions}
-            subtitle={`${filteredHabits.length} habits`}
-            icon="✓"
-            gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Today's Progress Card */}
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden">
+            <div className="absolute top-2 right-2 text-4xl sm:text-5xl opacity-20">📋</div>
+            <div className="relative">
+              <div className="text-xs sm:text-sm opacity-90 mb-2">Today&apos;s Progress</div>
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-3xl sm:text-4xl font-bold">{todayCompleted}/{todayTotal}</span>
+                <span className="text-lg sm:text-xl opacity-80">habits</span>
+              </div>
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-white h-full rounded-full transition-all duration-500"
+                    style={{ width: `${todayPercentage}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold">{todayPercentage}%</span>
+              </div>
+              {/* Trend vs Yesterday */}
+              <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
+                <span className="text-xs opacity-75">vs Yesterday</span>
+                <div className="flex items-center gap-1">
+                  {todayTrend > 0 && (
+                    <>
+                      <span className="text-green-300 text-sm">↑</span>
+                      <span className="text-xs font-medium text-green-300">+{todayTrend}%</span>
+                    </>
+                  )}
+                  {todayTrend < 0 && (
+                    <>
+                      <span className="text-red-300 text-sm">↓</span>
+                      <span className="text-xs font-medium text-red-300">{todayTrend}%</span>
+                    </>
+                  )}
+                  {todayTrend === 0 && (
+                    <>
+                      <span className="text-white/60 text-sm">→</span>
+                      <span className="text-xs font-medium text-white/60">Same</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* This Week Card */}
+          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden">
+            <div className="absolute top-2 right-2 text-4xl sm:text-5xl opacity-20">📊</div>
+            <div className="relative">
+              <div className="text-xs sm:text-sm opacity-90 mb-2">This Week</div>
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-3xl sm:text-4xl font-bold">{weekCompleted}/{weekPossible}</span>
+                <span className="text-lg sm:text-xl opacity-80">done</span>
+              </div>
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-white h-full rounded-full transition-all duration-500"
+                    style={{ width: `${weekPercentage}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold">{weekPercentage}%</span>
+              </div>
+              {/* Trend vs Last Week */}
+              <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
+                <span className="text-xs opacity-75">vs Last Week</span>
+                <div className="flex items-center gap-1">
+                  {weekTrend > 0 && (
+                    <>
+                      <span className="text-green-300 text-sm">↑</span>
+                      <span className="text-xs font-medium text-green-300">+{weekTrend}%</span>
+                    </>
+                  )}
+                  {weekTrend < 0 && (
+                    <>
+                      <span className="text-red-300 text-sm">↓</span>
+                      <span className="text-xs font-medium text-red-300">{weekTrend}%</span>
+                    </>
+                  )}
+                  {weekTrend === 0 && (
+                    <>
+                      <span className="text-white/60 text-sm">→</span>
+                      <span className="text-xs font-medium text-white/60">Same</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <TotalProgressChart

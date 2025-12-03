@@ -128,17 +128,26 @@ export function getWeekNumberInMonth(date: Date): number {
 
 /**
  * Calculate streak from completion dates
+ * Counts consecutive days ending at endDate (or yesterday if today not completed)
  */
 export function calculateStreak(completionDates: string[], endDate: Date): number {
   if (completionDates.length === 0) return 0;
 
-  const sortedDates = [...completionDates].sort().reverse();
+  const completionSet = new Set(completionDates);
   let streak = 0;
   let currentDate = new Date(endDate);
+  const todayStr = formatDateToString(currentDate);
+  
+  // If today is not completed, start checking from yesterday
+  // This allows the streak to continue if user hasn't logged today yet
+  if (!completionSet.has(todayStr)) {
+    currentDate.setDate(currentDate.getDate() - 1);
+  }
 
-  for (let i = 0; i < sortedDates.length; i++) {
+  // Count consecutive completed days going backwards
+  while (true) {
     const checkDate = formatDateToString(currentDate);
-    if (sortedDates[i] === checkDate) {
+    if (completionSet.has(checkDate)) {
       streak++;
       currentDate.setDate(currentDate.getDate() - 1);
     } else {
