@@ -37,7 +37,8 @@ export default function ProfileMenu() {
     router.push('/profile');
   };
 
-  const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0] || 'User';
+  const displayName = profile?.username || user?.email?.split('@')[0] || 'User';
+  const displayUsername = profile?.username ? `@${profile.username}` : user?.email;
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
 
   return (
@@ -79,7 +80,7 @@ export default function ProfileMenu() {
               {displayName}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-              {user?.email}
+              {displayUsername}
             </p>
           </div>
 

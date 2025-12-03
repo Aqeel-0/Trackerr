@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -41,12 +41,12 @@ export default function ProfilePage() {
 
     const { data } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url')
+      .select('username, avatar_url')
       .eq('id', user.id)
       .maybeSingle();
 
     if (data) {
-      setDisplayName(data.display_name || '');
+      setUsername(data.username || '');
       setAvatarUrl(data.avatar_url || '');
       setAvatarPreview(data.avatar_url || '');
     }
@@ -73,27 +73,45 @@ export default function ProfilePage() {
   const uploadAvatar = async (): Promise<string | null> => {
     if (!avatarFile || !user) return null;
 
-    const fileExt = avatarFile.name.split('.').pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    try {
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
 
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, avatarFile);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-    if (uploadError) {
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Upload failed');
+      }
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
       return null;
     }
-
-    const { data } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   };
 
   const handleSave = async () => {
     if (!user) return;
+    
+    if (!username || username.trim() === '') {
+      setMessage({ type: 'error', text: 'Username is required' });
+      return;
+    }
+
+    if (username.length < 3) {
+      setMessage({ type: 'error', text: 'Username must be at least 3 characters' });
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
 
@@ -109,15 +127,34 @@ export default function ProfilePage() {
         }
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
-          display_name: displayName,
+          username: username.toLowerCase(),
           avatar_url: newAvatarUrl,
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Username already taken. Please choose another one.');
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        const { data: insertData, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username: username.toLowerCase(),
+            avatar_url: newAvatarUrl,
+          })
+          .select();
+
+        if (insertError) throw insertError;
+      }
 
       setAvatarUrl(newAvatarUrl);
       setAvatarFile(null);
@@ -230,7 +267,7 @@ export default function ProfilePage() {
                     {avatarPreview ? (
                       <Image
                         src={avatarPreview}
-                        alt={displayName}
+                        alt={username || 'User'}
                         width={256}
                         height={256}
                         className="w-full h-full object-cover"
@@ -292,22 +329,22 @@ export default function ProfilePage() {
               {/* Right Column - Details */}
               <div className="flex-1 space-y-8">
                 <div className="space-y-6">
-                  {/* Name */}
+                  {/* Username */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                      Name:
+                      Username:
                     </label>
                     {isEditing ? (
                       <input
                         type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                         className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-400 transition-colors"
-                        placeholder="User name"
+                        placeholder="Enter username"
                       />
                     ) : (
                       <div className="text-slate-600 dark:text-slate-400">
-                        {displayName || 'User name'}
+                        {username || 'Not set'}
                       </div>
                     )}
                   </div>
