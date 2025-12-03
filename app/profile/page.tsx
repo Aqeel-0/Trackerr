@@ -16,8 +16,6 @@ export default function ProfilePage() {
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,14 +41,12 @@ export default function ProfilePage() {
 
     const { data } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url, phone, address')
+      .select('display_name, avatar_url')
       .eq('id', user.id)
       .maybeSingle();
 
     if (data) {
       setDisplayName(data.display_name || '');
-      setPhone(data.phone || '');
-      setAddress(data.address || '');
       setAvatarUrl(data.avatar_url || '');
       setAvatarPreview(data.avatar_url || '');
     }
@@ -118,8 +114,6 @@ export default function ProfilePage() {
         .update({
           display_name: displayName,
           avatar_url: newAvatarUrl,
-          phone: phone,
-          address: address,
         })
         .eq('id', user.id);
 
@@ -326,46 +320,6 @@ export default function ProfilePage() {
                     <div className="text-slate-600 dark:text-slate-400">
                       {email}
                     </div>
-                  </div>
-
-                  {/* Phone Number */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                      Phone Number:
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-400 transition-colors"
-                        placeholder="+20-01274318900"
-                      />
-                    ) : (
-                      <div className="text-slate-600 dark:text-slate-400">
-                        {phone || '+20-01274318900'}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Address */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                      Address:
-                    </label>
-                    {isEditing ? (
-                      <textarea
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        rows={2}
-                        className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-400 transition-colors resize-none"
-                        placeholder="285 N Broad St, Elizabeth, NJ 07208, USA"
-                      />
-                    ) : (
-                      <div className="text-slate-600 dark:text-slate-400 max-w-md leading-relaxed">
-                        {address || '285 N Broad St, Elizabeth, NJ 07208, USA'}
-                      </div>
-                    )}
                   </div>
                 </div>
 
