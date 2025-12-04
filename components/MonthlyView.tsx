@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useHabits } from "@/contexts/HabitContext";
 import {
   formatDateToString,
@@ -29,7 +29,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Habit } from "@/types/habit";
 import DeleteConfirmModal from "./DeleteConfirmModal";
-import HabitContextMenu from "./HabitContextMenu";
 
 interface SortableHabitRowProps {
   habit: Habit;
@@ -37,7 +36,6 @@ interface SortableHabitRowProps {
   today: Date;
   getWeekColor: (index: number) => string;
   onDelete: (id: string, name: string) => void;
-  onOpenContextMenu: (habitId: string, habitName: string) => void;
   toggleCompletion: (habitId: string, date: string) => void;
   isHabitCompleted: (habitId: string, date: string) => boolean;
   setCounter: (habitId: string, date: string, count: number) => void;
@@ -52,7 +50,6 @@ function SortableHabitRow({
   today,
   getWeekColor,
   onDelete,
-  onOpenContextMenu,
   toggleCompletion,
   isHabitCompleted,
   setCounter,
@@ -60,9 +57,6 @@ function SortableHabitRow({
   isMobileView = false,
   isTabletView = false,
 }: SortableHabitRowProps) {
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const longPressTriggered = useRef(false);
-
   const {
     attributes,
     listeners,
@@ -79,51 +73,13 @@ function SortableHabitRow({
 
   const isCompactView = isMobileView || isTabletView;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isMobileView || isTabletView) {
-      e.preventDefault();
-      longPressTriggered.current = false;
-      const timer = setTimeout(() => {
-        longPressTriggered.current = true;
-        onOpenContextMenu(habit.id, habit.name);
-        if (navigator.vibrate) {
-          navigator.vibrate(50);
-        }
-      }, 500);
-      setLongPressTimer(timer);
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-    if (longPressTriggered.current) {
-      e.preventDefault();
-    }
-  };
-
-  const handleTouchMove = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  };
-
   return (
     <tr
       ref={setNodeRef}
       style={style}
       className={`group ${isDragging ? "opacity-50" : ""}`}
     >
-      <td 
-        className={`border border-slate-200 dark:border-slate-700 py-1 px-1 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'} select-none`}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchMove}
-        style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' } as React.CSSProperties}
-      >
+      <td className={`border border-slate-200 dark:border-slate-700 py-1 px-1 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
           <div className="flex items-center justify-between gap-0.5 h-full">
             <div className="flex items-center gap-1 truncate">
               <button
@@ -272,8 +228,6 @@ function CompactWeekView({
 }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [contextMenuHabit, setContextMenuHabit] = useState<{ id: string; name: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -301,11 +255,6 @@ function CompactWeekView({
       deleteHabit(habitToDelete.id);
       setHabitToDelete(null);
     }
-  };
-
-  const handleOpenContextMenu = (habitId: string, habitName: string) => {
-    setContextMenuHabit({ id: habitId, name: habitName });
-    setContextMenuOpen(true);
   };
 
   const numDays = weekDates.length;
@@ -387,7 +336,6 @@ function CompactWeekView({
                 today={today}
                 getWeekColor={getCellBg}
                 onDelete={handleDelete}
-                onOpenContextMenu={handleOpenContextMenu}
                 toggleCompletion={toggleCompletion}
                 isHabitCompleted={isHabitCompleted}
                 setCounter={setCounter}
@@ -399,21 +347,6 @@ function CompactWeekView({
           </tbody>
         </SortableContext>
       </table>
-      
-      <HabitContextMenu
-        isOpen={contextMenuOpen}
-        onClose={() => setContextMenuOpen(false)}
-        onEdit={() => {
-          console.log("Edit habit:", contextMenuHabit?.name);
-          setContextMenuOpen(false);
-        }}
-        onDelete={() => {
-          if (contextMenuHabit) {
-            handleDelete(contextMenuHabit.id, contextMenuHabit.name);
-          }
-        }}
-        habitName={contextMenuHabit?.name || ""}
-      />
       
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
@@ -437,8 +370,6 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [contextMenuHabit, setContextMenuHabit] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     setCurrentDate(new Date());
@@ -507,11 +438,6 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
       deleteHabit(habitToDelete.id);
       setHabitToDelete(null);
     }
-  };
-
-  const handleOpenContextMenu = (habitId: string, habitName: string) => {
-    setContextMenuHabit({ id: habitId, name: habitName });
-    setContextMenuOpen(true);
   };
 
   const getWeekDates = (weeksToShow: number): Date[] => {
@@ -756,7 +682,6 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
                     today={today}
                     getWeekColor={getWeekColor}
                     onDelete={handleDelete}
-                    onOpenContextMenu={handleOpenContextMenu}
                     toggleCompletion={toggleCompletion}
                     isHabitCompleted={isHabitCompleted}
                     setCounter={setCounter}
@@ -798,21 +723,6 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
           </tbody>
         </table>
       </div>
-      
-      <HabitContextMenu
-        isOpen={contextMenuOpen}
-        onClose={() => setContextMenuOpen(false)}
-        onEdit={() => {
-          console.log("Edit habit:", contextMenuHabit?.name);
-          setContextMenuOpen(false);
-        }}
-        onDelete={() => {
-          if (contextMenuHabit) {
-            handleDelete(contextMenuHabit.id, contextMenuHabit.name);
-          }
-        }}
-        habitName={contextMenuHabit?.name || ""}
-      />
       
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
