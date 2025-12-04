@@ -28,6 +28,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Habit } from "@/types/habit";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 interface SortableHabitRowProps {
   habit: Habit;
@@ -225,6 +226,9 @@ function CompactWeekView({
   isMobileView?: boolean;
   isTabletView?: boolean;
 }) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<{ id: string; name: string } | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -242,8 +246,14 @@ function CompactWeekView({
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteHabit(id);
+    setHabitToDelete({ id, name });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (habitToDelete) {
+      deleteHabit(habitToDelete.id);
+      setHabitToDelete(null);
     }
   };
 
@@ -337,6 +347,13 @@ function CompactWeekView({
           </tbody>
         </SortableContext>
       </table>
+      
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        habitName={habitToDelete?.name || ""}
+      />
     </DndContext>
   );
 }
@@ -351,6 +368,8 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const [today, setToday] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     setCurrentDate(new Date());
@@ -410,8 +429,14 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteHabit(id);
+    setHabitToDelete({ id, name });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (habitToDelete) {
+      deleteHabit(habitToDelete.id);
+      setHabitToDelete(null);
     }
   };
 
@@ -698,6 +723,13 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
           </tbody>
         </table>
       </div>
+      
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        habitName={habitToDelete?.name || ""}
+      />
     </div>
   );
 }

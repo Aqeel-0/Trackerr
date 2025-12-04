@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useHabits } from "@/contexts/HabitContext";
 import {
   DndContext,
@@ -19,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Habit } from "@/types/habit";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 interface SortableHabitItemProps {
   habit: Habit;
@@ -105,6 +107,8 @@ function SortableHabitItem({ habit, onDelete }: SortableHabitItemProps) {
 
 export default function HabitList() {
   const { habits, deleteHabit, reorderHabits } = useHabits();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -125,8 +129,14 @@ export default function HabitList() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteHabit(id);
+    setHabitToDelete({ id, name });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (habitToDelete) {
+      deleteHabit(habitToDelete.id);
+      setHabitToDelete(null);
     }
   };
 
@@ -158,6 +168,13 @@ export default function HabitList() {
           ))}
         </div>
       </SortableContext>
+      
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        habitName={habitToDelete?.name || ""}
+      />
     </DndContext>
   );
 }
