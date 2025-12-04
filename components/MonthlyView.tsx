@@ -117,7 +117,7 @@ function SortableHabitRow({
             className={`border p-0 text-center h-full relative ${isToday
               ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
               : `${getWeekColor(weekIndex)} border-slate-300 dark:border-slate-600`
-              }`}
+            }`}
           >
             {habit.trackingType === "checkbox" ? (
               <div className={`flex items-center justify-center h-full w-full ${isMobileView ? 'p-1' : 'p-0.5'}`}>
@@ -156,7 +156,7 @@ function SortableHabitRow({
                   className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
                     ? "opacity-20 cursor-not-allowed text-slate-400"
                     : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                    }`}
+                  }`}
                 >
                   −
                 </button>
@@ -187,7 +187,7 @@ function SortableHabitRow({
                   className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture
                     ? "opacity-20 cursor-not-allowed text-slate-400"
                     : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                    }`}
+                  }`}
                 >
                   +
                 </button>
@@ -304,7 +304,7 @@ function CompactWeekView({
                   className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${isToday
                       ? "bg-indigo-500 text-white"
                       : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
-                    }`}
+                  }`}
                 >
                   <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
                   <div className={`font-bold ${isMobileView ? 'text-xs' : 'text-sm'}`}>{date.getDate()}</div>
@@ -341,8 +341,12 @@ function CompactWeekView({
   );
 }
 
-export default function MonthlyView() {
-  const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits } = useHabits();
+interface MonthlyViewProps {
+  onAddHabit?: () => void;
+}
+
+export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
+  const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits, isLoading } = useHabits();
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -351,7 +355,7 @@ export default function MonthlyView() {
   useEffect(() => {
     setCurrentDate(new Date());
     setToday(new Date());
-
+    
     const checkViewMode = () => {
       const width = window.innerWidth;
       if (width < 640) {
@@ -362,7 +366,7 @@ export default function MonthlyView() {
         setViewMode('desktop');
       }
     };
-
+    
     checkViewMode();
     window.addEventListener('resize', checkViewMode);
     return () => window.removeEventListener('resize', checkViewMode);
@@ -415,7 +419,7 @@ export default function MonthlyView() {
     if (!today) return [];
     const currentWeek = getCurrentWeek();
     const dates: Date[] = [];
-
+    
     for (let w = 0; w < weeksToShow; w++) {
       for (let d = 0; d < 7; d++) {
         const newDate = new Date(currentWeek[d]);
@@ -429,14 +433,14 @@ export default function MonthlyView() {
   const getWeekLabel = (weeksToShow: number): string => {
     const dates = getWeekDates(weeksToShow);
     if (dates.length === 0) return "";
-
+    
     const start = dates[0];
     const end = dates[dates.length - 1];
-
+    
     if (weekOffset === 0 && weeksToShow === 1) return "This Week";
     if (weekOffset === -1 && weeksToShow === 1) return "Last Week";
     if (weekOffset === 1 && weeksToShow === 1) return "Next Week";
-
+    
     return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
@@ -465,14 +469,37 @@ export default function MonthlyView() {
       : "bg-[#e5e5e5] dark:bg-slate-700";
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white dark:bg-slate-900">
+        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">Loading your habits...</p>
+      </div>
+    );
+  }
+
   if (habits.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white dark:bg-slate-900">
-        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
-          <span className="text-3xl">📋</span>
+        {onAddHabit && (
+          <div className="flex flex-col items-center gap-5">
+            <button
+              onClick={onAddHabit}
+              className="relative flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/40 active:scale-95 transition-all duration-200 border border-indigo-400/20"
+              aria-label="Create your first habit"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-black/10 to-white/10 pointer-events-none"></div>
+            </button>
+            <div className="space-y-1.5">
+              <p className="text-lg font-semibold text-slate-800 dark:text-slate-200">Create Your First Habit</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Start building better routines today</p>
+            </div>
         </div>
-        <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">No habits yet</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Click &quot;New Habit&quot; to get started</p>
+        )}
       </div>
     );
   }
@@ -480,7 +507,7 @@ export default function MonthlyView() {
   if (viewMode === 'mobile' || viewMode === 'tablet') {
     const weeksToShow = viewMode === 'mobile' ? 1 : 2;
     const weekDates = getWeekDates(weeksToShow);
-
+    
     return (
       <div className="h-full flex flex-col bg-white dark:bg-slate-900">
         {/* Header */}
@@ -605,8 +632,8 @@ export default function MonthlyView() {
                       <th
                         key={`${weekIndex}-${dayIndex}`}
                         className={`border border-slate-300 dark:border-slate-600 py-0 px-0 text-center text-[7px] font-medium ${isToday
-                          ? "bg-indigo-500 text-white"
-                          : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
+                            ? "bg-indigo-500 text-white"
+                            : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
                           }`}
                       >
                         <div className={isToday ? "" : "opacity-70"}>{getDayName(date)}</div>

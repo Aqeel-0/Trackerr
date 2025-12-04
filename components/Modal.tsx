@@ -47,7 +47,7 @@ export default function Modal({ isOpen, onClose, title, children, contentClassNa
       <div
         ref={modalRef}
         className={`bg-white dark:bg-slate-800 shadow-2xl w-full border border-slate-200 dark:border-slate-700 flex flex-col ${isMobile
-            ? 'rounded-t-3xl animate-slide-up max-h-[95vh]'
+            ? 'rounded-t-3xl animate-slide-up h-[80vh]'
             : 'rounded-2xl animate-scale-in max-w-lg max-h-[85vh]'
           }`}
         onClick={(e) => e.stopPropagation()}

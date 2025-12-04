@@ -12,9 +12,9 @@ interface SidebarProps {
   setIsMobileMenuOpen: (open: boolean) => void;
 }
 
-export default function Sidebar({
-  currentView,
-  setCurrentView,
+export default function Sidebar({ 
+  currentView, 
+  setCurrentView, 
   onAddHabit,
   isMobileMenuOpen,
   setIsMobileMenuOpen
@@ -36,10 +36,10 @@ export default function Sidebar({
   const handleNavClick = (view: "tracker" | "analytics" | "profile") => {
     if (view === "profile") {
       router.push('/profile');
-    } else if (currentView === 'profile') {
-      router.push(`/?view=${view}`);
+    } else if (view === "analytics") {
+      router.push('/analytics');
     } else {
-      setCurrentView(view);
+      router.push('/');
     }
     setIsMobileMenuOpen(false);
   };
@@ -59,10 +59,13 @@ export default function Sidebar({
       {/* Desktop Sidebar */}
       <div className="hidden md:flex w-20 xl:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col h-full transition-all duration-300 fixed left-0 top-0 z-30">
         <div className="h-16 flex items-center justify-center xl:justify-start xl:px-6 border-b border-slate-200 dark:border-slate-800">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
-            T
+          <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
           </div>
-          <span className="hidden xl:block ml-3 font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="hidden xl:block ml-3 text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
             Trackerr
           </span>
         </div>
@@ -73,7 +76,7 @@ export default function Sidebar({
             className={`w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${currentView === "tracker"
                 ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
+            }`}
             title="Tracker"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -90,7 +93,7 @@ export default function Sidebar({
             className={`w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${currentView === "analytics"
                 ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
+            }`}
             title="Analytics"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -135,7 +138,7 @@ export default function Sidebar({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div
+        <div 
           className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 animate-fade-in"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -143,14 +146,17 @@ export default function Sidebar({
 
       {/* Mobile Slide-out Menu */}
       <div className={`md:hidden fixed inset-y-0 right-0 w-[280px] bg-white dark:bg-slate-900 z-50 transform transition-transform duration-300 ease-out shadow-2xl ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}>
+      }`}>
         <div className="flex flex-col h-full safe-top safe-bottom">
           <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
-                T
+              <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
               </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
                 Trackerr
               </span>
             </div>
@@ -169,7 +175,7 @@ export default function Sidebar({
             <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-4 py-2">
               Menu
             </div>
-
+            
             <button
               onClick={() => handleNavClick("tracker")}
               className={`mobile-nav-item w-full ${currentView === "tracker" ? "mobile-nav-item-active" : ""}`}

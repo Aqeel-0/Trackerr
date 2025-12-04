@@ -705,6 +705,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
   const value: HabitContextType = {
     habits,
     completions,
+    isLoading: !isLoaded,
     addHabit,
     deleteHabit,
     toggleCompletion,
