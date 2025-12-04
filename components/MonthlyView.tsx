@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useHabits } from "@/contexts/HabitContext";
 import {
   formatDateToString,
@@ -29,6 +29,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Habit } from "@/types/habit";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import HabitContextMenu from "./HabitContextMenu";
 
 interface SortableHabitRowProps {
   habit: Habit;
@@ -57,6 +58,10 @@ function SortableHabitRow({
   isMobileView = false,
   isTabletView = false,
 }: SortableHabitRowProps) {
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const longPressTriggered = useRef(false);
+
   const {
     attributes,
     listeners,
@@ -73,38 +78,72 @@ function SortableHabitRow({
 
   const isCompactView = isMobileView || isTabletView;
 
+  const handleTouchStart = () => {
+    if (isMobileView || isTabletView) {
+      longPressTriggered.current = false;
+      const timer = setTimeout(() => {
+        longPressTriggered.current = true;
+        setContextMenuOpen(true);
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }, 500);
+      setLongPressTimer(timer);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleTouchMove = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
   return (
-    <tr
-      ref={setNodeRef}
-      style={style}
-      className={`group ${isDragging ? "opacity-50" : ""}`}
-    >
-      <td className={`border border-slate-200 dark:border-slate-700 py-1 px-1 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
-        <div className="flex items-center justify-between gap-0.5 h-full">
-          <div className="flex items-center gap-1 truncate">
+    <>
+      <tr
+        ref={setNodeRef}
+        style={style}
+        className={`group ${isDragging ? "opacity-50" : ""}`}
+      >
+        <td 
+          className={`border border-slate-200 dark:border-slate-700 py-1 px-1 bg-white dark:bg-slate-900 z-10 font-medium text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
+        >
+          <div className="flex items-center justify-between gap-0.5 h-full">
+            <div className="flex items-center gap-1 truncate">
+              <button
+                {...attributes}
+                {...listeners}
+                className="touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing flex-shrink-0 hidden sm:block"
+                aria-label="Drag to reorder"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" />
+                  <circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" />
+                </svg>
+              </button>
+              <span className={`flex-shrink-0 ${isMobileView ? 'text-sm' : 'text-sm'}`}>{habit.icon}</span>
+              <span className={`truncate ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>{habit.name}</span>
+            </div>
             <button
-              {...attributes}
-              {...listeners}
-              className="touch-none text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 cursor-grab active:cursor-grabbing flex-shrink-0 hidden sm:block"
-              aria-label="Drag to reorder"
+              onClick={() => onDelete(habit.id, habit.name)}
+              className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hidden sm:block"
+              title="Delete habit"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" />
-                <circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" />
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
-            <span className={`flex-shrink-0 ${isMobileView ? 'text-sm' : 'text-sm'}`}>{habit.icon}</span>
-            <span className={`truncate ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>{habit.name}</span>
           </div>
-          <button
-            onClick={() => onDelete(habit.id, habit.name)}
-            className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hidden sm:block"
-            title="Delete habit"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-      </td>
+        </td>
       {dates.map((date, dayIndex) => {
         const dateString = formatDateToString(date);
         const isCompleted = isHabitCompleted(habit.id, dateString);
@@ -198,6 +237,17 @@ function SortableHabitRow({
         );
       })}
     </tr>
+    
+    <HabitContextMenu
+      isOpen={contextMenuOpen}
+      onClose={() => setContextMenuOpen(false)}
+      onEdit={() => {
+        console.log("Edit habit:", habit.name);
+      }}
+      onDelete={() => onDelete(habit.id, habit.name)}
+      habitName={habit.name}
+    />
+    </>
   );
 }
 
