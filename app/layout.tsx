@@ -32,9 +32,9 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>
-            <HabitProvider>
-              {children}
-            </HabitProvider>
+          <HabitProvider>
+            {children}
+          </HabitProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

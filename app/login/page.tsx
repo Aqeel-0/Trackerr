@@ -56,21 +56,21 @@ function ThemeToggle() {
 
 function AnalyticsIllustration({ mounted }: { mounted: boolean }) {
   if (!mounted) return null;
-  
+
   const monthData = [
-    3, 5, 4, 7, 6, 8, 5, 4, 6, 8, 7, 9, 6, 8, 
+    3, 5, 4, 7, 6, 8, 5, 4, 6, 8, 7, 9, 6, 8,
     10, 7, 8, 6, 9, 11, 8, 7, 10, 9, 12, 8, 10, 9, 11, 8
   ];
   const maxVal = Math.max(...monthData);
   const avgVal = Math.round(monthData.reduce((a, b) => a + b, 0) / monthData.length);
-  
+
   const points = monthData.map((val, i) => {
     const x = (i / (monthData.length - 1)) * 100;
     const y = 100 - (val / maxVal) * 100;
     return `${x},${y}`;
   }).join(' ');
-  
-  const areaPath = `M0,100 L0,${100 - (monthData[0] / maxVal) * 100} ` + 
+
+  const areaPath = `M0,100 L0,${100 - (monthData[0] / maxVal) * 100} ` +
     monthData.map((val, i) => {
       const x = (i / (monthData.length - 1)) * 100;
       const y = 100 - (val / maxVal) * 100;
@@ -85,12 +85,12 @@ function AnalyticsIllustration({ mounted }: { mounted: boolean }) {
         <div className="absolute bottom-32 left-16 w-12 h-12 border-2 border-white/10 rounded-lg rotate-12" />
         <div className="absolute top-1/4 right-1/4 w-4 h-4 bg-white/10 rounded-full" />
         <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-white/15 rounded-full" />
-        
+
         <svg className="absolute top-16 right-32 w-24 h-24 text-white/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
-        
+
         <svg className="absolute bottom-20 right-16 w-16 h-16 text-white/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M3 9h18" />
@@ -141,7 +141,7 @@ function AnalyticsIllustration({ mounted }: { mounted: boolean }) {
                 </div>
               ))}
             </div>
-            
+
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -150,17 +150,17 @@ function AnalyticsIllustration({ mounted }: { mounted: boolean }) {
                 </linearGradient>
               </defs>
               <path d={areaPath} fill="url(#areaGradient)" />
-              <polyline 
-                points={points} 
-                fill="none" 
-                stroke="rgb(34, 211, 238)" 
+              <polyline
+                points={points}
+                fill="none"
+                stroke="rgb(34, 211, 238)"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </svg>
-            
-            <div 
+
+            <div
               className="absolute left-0 right-0 border-t-2 border-dashed border-cyan-400/50"
               style={{ top: `${100 - (avgVal / maxVal) * 100}%` }}
             >
@@ -199,8 +199,8 @@ function AnalyticsIllustration({ mounted }: { mounted: boolean }) {
             </div>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5, 6, 7].map((_, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className="w-1.5 rounded-full bg-gradient-to-t from-green-500 to-emerald-400"
                   style={{ height: `${12 + Math.random() * 20}px` }}
                 />
@@ -318,76 +318,83 @@ export default function LoginPage() {
 
   return (
     <div className="fixed inset-0 flex">
-      <div className="w-full lg:w-1/2 flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a] overflow-auto">
-        <div className="absolute top-6 right-6 z-10">
-          <ThemeToggle />
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a]">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-6 sm:px-8 md:px-12 lg:px-20 py-5 sm:py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <span className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Trackerr</span>
+          </div>
+          {/* Theme toggle - on the right for mobile, right for all */}
+          <div className="lg:hidden">
+            <ThemeToggle />
+          </div>
         </div>
-        
-        <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-20 py-12">
-          <div className="w-full max-w-[400px] mx-auto">
-            <div className="flex items-center gap-3 mb-12">
-              <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </div>
-              <span className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Trackerr</span>
-            </div>
 
-            <div className="mb-10">
-              <h1 className="text-[32px] font-semibold tracking-tight text-gray-900 dark:text-white leading-tight">
-                {mode === 'signin' ? 'Welcome back' : 'Get started'}
-              </h1>
-              <p className="text-[15px] text-gray-500 dark:text-gray-400 mt-2">
-                {mode === 'signin' ? 'Enter your credentials to access your account' : 'Create your account to start tracking habits'}
-              </p>
-            </div>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="min-h-full flex flex-col justify-center px-6 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-8">
+            <div className="w-full max-w-[400px] mx-auto">
+              {/* Title Section - Fixed height to prevent movement */}
+              <div className="mb-6 sm:mb-8">
+                <h1 className="text-[26px] sm:text-[28px] md:text-[30px] font-semibold tracking-tight text-gray-900 dark:text-white leading-tight" style={{ minHeight: '36px' }}>
+                  {mode === 'signin' ? 'Sign in to Trackerr' : 'Create your account'}
+                </h1>
+                <p className="text-[13px] sm:text-[14px] text-gray-500 dark:text-gray-400 mt-1.5 sm:mt-2" style={{ minHeight: '20px' }}>
+                  {mode === 'signin' ? 'Welcome back! Please enter your details' : 'Start tracking your habits today'}
+                </p>
+              </div>
 
             <button
               type="button"
               onClick={handleOAuthSignIn}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 h-12 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] hover:border-gray-300 dark:hover:border-gray-700 transition-all disabled:opacity-50 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 sm:gap-3 h-10 sm:h-11 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] hover:border-gray-300 dark:hover:border-gray-700 transition-all disabled:opacity-50 shadow-sm"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              <span className="text-[15px] font-medium text-gray-700 dark:text-gray-200">
+              <span className="text-[13px] sm:text-[14px] font-medium text-gray-700 dark:text-gray-200">
                 Continue with Google
               </span>
             </button>
 
-            <div className="relative my-8">
+            <div className="relative my-4 sm:my-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
               </div>
               <div className="relative flex justify-center">
-                <span className="px-4 text-[13px] text-gray-400 dark:text-gray-500 bg-[#fafafa] dark:bg-[#0a0a0a]">
+                <span className="px-3 sm:px-4 text-[11px] sm:text-[12px] text-gray-400 dark:text-gray-500 bg-[#fafafa] dark:bg-[#0a0a0a]">
                   or continue with email
                 </span>
               </div>
             </div>
 
             {error && (
-              <div className="mb-6 flex items-center gap-2 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 rounded-xl px-4 py-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 flex-shrink-0">
+              <div className="mb-4 flex items-center gap-2 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 rounded-xl px-3 py-2.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 flex-shrink-0">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
-                <p className="text-[13px] text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-[12px] text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
 
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-3.5">
               {mode === 'signup' && (
                 <>
-                  <div className="space-y-1.5">
-                    <label className="block text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1">
+                    <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300">
                       Username
                     </label>
                     <input
@@ -396,11 +403,11 @@ export default function LoginPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="johndoe"
                       required
-                      className="w-full h-12 px-4 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[15px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+                      className="w-full h-11 px-3.5 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[14px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1">
+                    <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300">
                       Email
                     </label>
                     <input
@@ -409,15 +416,15 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      className="w-full h-12 px-4 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[15px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+                      className="w-full h-11 px-3.5 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[14px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
                     />
                   </div>
                 </>
               )}
 
               {mode === 'signin' && (
-                <div className="space-y-1.5">
-                  <label className="block text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300">
                     Email or username
                   </label>
                   <input
@@ -426,18 +433,18 @@ export default function LoginPage() {
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder="you@example.com"
                     required
-                    className="w-full h-12 px-4 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[15px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+                    className="w-full h-11 px-3.5 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[14px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
                   />
                 </div>
               )}
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[13px] font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300">
                     Password
                   </label>
                   {mode === 'signin' && (
-                    <button type="button" className="text-[13px] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+                    <button type="button" className="text-[12px] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                       Forgot?
                     </button>
                   )}
@@ -450,20 +457,20 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     required
                     minLength={mode === 'signup' ? 8 : 6}
-                    className="w-full h-12 px-4 pr-12 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[15px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+                    className="w-full h-11 px-3.5 pr-11 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent text-[14px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
                     {showPassword ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                         <line x1="1" y1="1" x2="23" y2="23"></line>
                       </svg>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                       </svg>
@@ -472,25 +479,24 @@ export default function LoginPage() {
                 </div>
 
                 {mode === 'signup' && passwordValidation && password.length > 0 && (
-                  <div className="pt-2 space-y-2">
+                  <div className="pt-1.5 space-y-1.5">
                     <div className="flex gap-1">
                       {[1, 2, 3].map((i) => (
-                        <div 
-                          key={i} 
-                          className={`h-1 flex-1 rounded-full transition-all ${
-                            i === 1 
+                        <div
+                          key={i}
+                          className={`h-0.5 flex-1 rounded-full transition-all ${i === 1
                               ? getPasswordStrengthBg(passwordValidation.strength)
                               : i === 2 && passwordValidation.strength !== 'weak'
                                 ? getPasswordStrengthBg(passwordValidation.strength)
                                 : i === 3 && passwordValidation.strength === 'strong'
                                   ? getPasswordStrengthBg(passwordValidation.strength)
                                   : 'bg-gray-200 dark:bg-gray-800'
-                          }`}
+                            }`}
                         />
                       ))}
                     </div>
                     {passwordValidation.errors.length > 0 && (
-                      <p className="text-[12px] text-gray-500">{passwordValidation.errors[0]}</p>
+                      <p className="text-[11px] text-gray-500">{passwordValidation.errors[0]}</p>
                     )}
                   </div>
                 )}
@@ -498,8 +504,8 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={loading || (mode === 'signup' && passwordValidation && !passwordValidation.isValid)}
-                className="w-full h-12 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 text-[15px] font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 shadow-sm"
+                disabled={loading || (mode === 'signup' && passwordValidation !== null && !passwordValidation.isValid)}
+                className="w-full h-11 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 text-[14px] font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-1 shadow-sm"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
@@ -512,7 +518,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="text-center mt-8 text-[14px] text-gray-500 dark:text-gray-400">
+            <p className="text-center mt-6 text-[13px] text-gray-500 dark:text-gray-400">
               {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
               <button
                 onClick={() => {
@@ -525,17 +531,23 @@ export default function LoginPage() {
               </button>
             </p>
 
-            <p className="text-center mt-6 text-[12px] text-gray-400 dark:text-gray-600">
+            <p className="text-center mt-4 text-[11px] text-gray-400 dark:text-gray-600">
               By continuing, you agree to our{' '}
               <button className="underline hover:text-gray-600 dark:hover:text-gray-400">Terms</button>
               {' '}and{' '}
               <button className="underline hover:text-gray-600 dark:hover:text-gray-400">Privacy Policy</button>
             </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="hidden lg:block w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700">
+      {/* Right Side - Illustration */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 relative">
+        {/* Theme toggle for desktop - top right of illustration */}
+        <div className="absolute top-6 right-6 z-20">
+          <ThemeToggle />
+        </div>
         <AnalyticsIllustration mounted={mounted} />
       </div>
     </div>

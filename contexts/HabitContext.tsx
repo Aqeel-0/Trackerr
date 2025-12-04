@@ -53,6 +53,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             trackingType: h.tracking_type as "checkbox" | "counter",
             targetCount: h.target_count,
             unit: h.unit,
+            category: h.category,
             displayOrder: h.display_order,
             createdAt: h.created_at,
             updatedAt: h.updated_at
@@ -67,10 +68,11 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
             user_id: c.user_id,
             date: c.date,
             completed: c.completed,
-            count: c.count,
+            count: c.count ?? 0, // Ensure count is never null/undefined
             createdAt: c.created_at,
             updatedAt: c.updated_at
           }));
+
           setCompletions(mappedCompletions);
         }
       } catch (error) {
@@ -84,7 +86,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
     const habitsSubscription = supabase
       .channel('habits-changes')
-      .on('postgres_changes', 
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'habits', filter: `user_id=eq.${user.id}` },
         () => loadData()
       )
@@ -120,6 +122,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       tracking_type: habitData.trackingType,
       target_count: habitData.targetCount,
       unit: habitData.unit,
+      category: habitData.category,
       display_order: maxOrder + 1
     };
 
@@ -138,7 +141,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         .from('habits')
         .insert(newHabit)
         .select();
-      
+
       if (error) {
         console.error('addHabit: Supabase error:', error);
         throw error;
@@ -161,7 +164,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         .delete()
         .eq('id', id)
         .eq('user_id', user.id);
-      
+
       if (error) throw error;
     } catch (error) {
       console.error("Error deleting habit:", error);
@@ -208,7 +211,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         }, {
           onConflict: 'habit_id,date'
         });
-      
+
       if (error) throw error;
     } catch (error) {
       console.error("Error toggling completion:", error);
@@ -255,7 +258,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         }, {
           onConflict: 'habit_id,date'
         });
-      
+
       if (error) throw error;
     } catch (error) {
       console.error("Error setting counter:", error);
@@ -354,7 +357,20 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const completionSet = new Set(completionDates);
 
       const today = new Date();
-      const createdDate = habit ? new Date(habit.createdAt) : today;
+      let createdDate = habit ? new Date(habit.createdAt) : today;
+
+      // Find the earliest date in completions (in case there's data before habit creation)
+      if (completionDates.length > 0) {
+        const earliestCompletion = completionDates.reduce((earliest, date) => {
+          return date < earliest ? date : earliest;
+        }, completionDates[0]);
+
+        const earliestDate = new Date(earliestCompletion);
+        if (earliestDate < createdDate) {
+          createdDate = earliestDate;
+        }
+      }
+
       const totalDays = Math.max(1, Math.floor(
         (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
       ) + 1);
@@ -399,7 +415,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         iterDate.setDate(iterDate.getDate() + 1);
       }
 
-      const weeklyBreakdown = dayCounts.map((count, i) => 
+      const weeklyBreakdown = dayCounts.map((count, i) =>
         dayTotals[i] > 0 ? Math.round((count / dayTotals[i]) * 100) : 0
       );
 
@@ -422,7 +438,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
       const monthlyData: { month: string; rate: number }[] = [];
       const monthGroups = new Map<string, { completed: number; total: number }>();
-      
+
       const monthIterDate = new Date(startDate);
       while (monthIterDate <= today) {
         const monthKey = `${monthIterDate.getFullYear()}-${String(monthIterDate.getMonth() + 1).padStart(2, '0')}`;
@@ -480,21 +496,36 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const habitCompletions = completions.filter((c) => c.habitId === habitId);
 
       const today = new Date();
-      const createdDate = habit ? new Date(habit.createdAt) : today;
+      let createdDate = habit ? new Date(habit.createdAt) : today;
 
       const dailyData: { date: string; count: number }[] = [];
       const dateCountMap = new Map<string, number>();
 
       habitCompletions.forEach((c) => {
-        dateCountMap.set(c.date, c.count || 0);
+        // Use the count value, defaulting to 0 if undefined or null
+        const countValue = c.count ?? 0;
+        dateCountMap.set(c.date, countValue);
       });
+
+      // Find the earliest date in completions (in case there's data before habit creation)
+      if (habitCompletions.length > 0) {
+        const earliestCompletion = habitCompletions.reduce((earliest, c) => {
+          return c.date < earliest ? c.date : earliest;
+        }, habitCompletions[0].date);
+
+        const earliestDate = new Date(earliestCompletion);
+        if (earliestDate < createdDate) {
+          createdDate = earliestDate;
+        }
+      }
 
       const iterDate = new Date(createdDate);
       while (iterDate <= today) {
         const dateStr = formatDateToString(iterDate);
+        const countValue = dateCountMap.get(dateStr) ?? 0;
         dailyData.push({
           date: dateStr,
-          count: dateCountMap.get(dateStr) || 0
+          count: countValue
         });
         iterDate.setDate(iterDate.getDate() + 1);
       }
@@ -513,7 +544,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
       const weeklyData: { week: string; count: number }[] = [];
       const weekGroups = new Map<string, number>();
-      
+
       dailyData.forEach((d) => {
         const date = new Date(d.date);
         const weekStart = new Date(date);
@@ -561,12 +592,20 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         dayCounts[dayOfWeek]++;
       });
 
-      const avgByDay = weeklyBreakdown.map((total, i) => 
+      const avgByDay = weeklyBreakdown.map((total, i) =>
         dayCounts[i] > 0 ? total / dayCounts[i] : 0
       );
 
+      // Calculate current streak (allow today to be 0 without breaking streak)
       let currentStreak = 0;
-      for (let i = dailyData.length - 1; i >= 0; i--) {
+      let startIndex = dailyData.length - 1;
+
+      // If today has no data, start from yesterday
+      if (startIndex >= 0 && dailyData[startIndex].count === 0) {
+        startIndex--;
+      }
+
+      for (let i = startIndex; i >= 0; i--) {
         if (dailyData[i].count > 0) {
           currentStreak++;
         } else {
@@ -593,10 +632,10 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         if (recentWeeks.length >= 2) {
           const firstHalf = recentWeeks.slice(0, Math.floor(recentWeeks.length / 2));
           const secondHalf = recentWeeks.slice(Math.floor(recentWeeks.length / 2));
-          
+
           const firstAvg = firstHalf.reduce((s, w) => s + w.count, 0) / firstHalf.length;
           const secondAvg = secondHalf.reduce((s, w) => s + w.count, 0) / secondHalf.length;
-          
+
           if (firstAvg > 0) {
             trendPercentage = ((secondAvg - firstAvg) / firstAvg) * 100;
             if (trendPercentage > 5) trend = "up";
@@ -609,7 +648,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const currentMonthData: { date: string; count: number }[] = [];
       const tempDate = new Date(firstOfMonth);
-      
+
       while (tempDate <= now) {
         const dateStr = formatDateToString(tempDate);
         const existing = dailyData.find(d => d.date === dateStr);
@@ -632,7 +671,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
         trend,
         trendPercentage: Math.abs(trendPercentage),
         weeklyBreakdown: avgByDay,
-        dailyData: currentMonthData,
+        dailyData: dailyData,
         weeklyData: weeklyData.slice(-12)
       };
     },
@@ -666,6 +705,7 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
   const value: HabitContextType = {
     habits,
     completions,
+    isLoading: !isLoaded,
     addHabit,
     deleteHabit,
     toggleCompletion,

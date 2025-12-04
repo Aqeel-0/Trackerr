@@ -100,7 +100,7 @@ function SortableHabitRow({
             className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hidden sm:block"
             title="Delete habit"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
         </div>
       </td>
@@ -116,7 +116,7 @@ function SortableHabitRow({
             key={dayIndex}
             className={`border p-0 text-center h-full relative ${isToday
               ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
-              : `${getWeekColor(weekIndex)} border-slate-200 dark:border-slate-700`
+              : `${getWeekColor(weekIndex)} border-slate-300 dark:border-slate-600`
             }`}
           >
             {habit.trackingType === "checkbox" ? (
@@ -253,15 +253,15 @@ function CompactWeekView({
     if (isMobileView) return "bg-slate-100 dark:bg-slate-800";
     const weekIdx = Math.floor(idx / 7);
     return weekIdx % 2 === 0
-      ? "bg-[#ebebeb] dark:bg-gray-700"
-      : "bg-[#dedede] dark:bg-gray-600";
+      ? "bg-[#f5f5f5] dark:bg-slate-800"
+      : "bg-[#e5e5e5] dark:bg-slate-700";
   };
 
   const getCellBg = (weekIdx: number) => {
     if (isMobileView) return "bg-white dark:bg-slate-900";
     return weekIdx % 2 === 0
-      ? "bg-[#f5f5f5] dark:bg-gray-800"
-      : "bg-[#e8e8e8] dark:bg-gray-700";
+      ? "bg-[#f5f5f5] dark:bg-slate-800"
+      : "bg-[#e5e5e5] dark:bg-slate-700";
   };
 
   return (
@@ -301,8 +301,7 @@ function CompactWeekView({
               return (
                 <th
                   key={idx}
-                  className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${
-                    isToday
+                  className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${isToday
                       ? "bg-indigo-500 text-white"
                       : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
                   }`}
@@ -342,8 +341,12 @@ function CompactWeekView({
   );
 }
 
-export default function MonthlyView() {
-  const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits } = useHabits();
+interface MonthlyViewProps {
+  onAddHabit?: () => void;
+}
+
+export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
+  const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits, isLoading } = useHabits();
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -462,18 +465,41 @@ export default function MonthlyView() {
 
   const getWeekColor = (index: number) => {
     return index % 2 === 0
-      ? "bg-[#f5f5f5] dark:bg-gray-800"
-      : "bg-[#e8e8e8] dark:bg-gray-700";
+      ? "bg-[#f5f5f5] dark:bg-slate-800"
+      : "bg-[#e5e5e5] dark:bg-slate-700";
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white dark:bg-slate-900">
+        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">Loading your habits...</p>
+      </div>
+    );
+  }
 
   if (habits.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white dark:bg-slate-900">
-        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
-          <span className="text-3xl">📋</span>
+        {onAddHabit && (
+          <div className="flex flex-col items-center gap-5">
+            <button
+              onClick={onAddHabit}
+              className="relative flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/40 active:scale-95 transition-all duration-200 border border-indigo-400/20"
+              aria-label="Create your first habit"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-black/10 to-white/10 pointer-events-none"></div>
+            </button>
+            <div className="space-y-1.5">
+              <p className="text-lg font-semibold text-slate-800 dark:text-slate-200">Create Your First Habit</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Start building better routines today</p>
+            </div>
         </div>
-        <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">No habits yet</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Click &quot;New Habit&quot; to get started</p>
+        )}
       </div>
     );
   }
@@ -585,14 +611,14 @@ export default function MonthlyView() {
           <table className="w-full border-collapse text-[10px] table-fixed">
             <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-800">
               <tr>
-                <th rowSpan={2} className="border-r border-t border-l border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[140px] text-slate-700 dark:text-slate-200 align-middle">
+                <th rowSpan={2} className="border-r border-t border-l border-slate-300 dark:border-slate-600 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-xs w-[160px] text-slate-700 dark:text-slate-200 align-middle">
                   My Habits
                 </th>
                 {monthWeeks.map((week, weekIndex) => (
                   <th
                     key={weekIndex}
                     colSpan={week.length}
-                    className={`border border-slate-200 dark:border-slate-700 py-0 px-0 text-center font-semibold text-[8px] text-slate-500 dark:text-slate-400 ${getWeekColor(weekIndex)}`}
+                    className={`border border-slate-300 dark:border-slate-600 py-0 px-0 text-center font-semibold text-[8px] text-slate-500 dark:text-slate-400 ${getWeekColor(weekIndex)}`}
                   >
                     {weekIndex < 4 ? `W${weekIndex + 1}` : 'Ex'}
                   </th>
@@ -605,7 +631,7 @@ export default function MonthlyView() {
                     return (
                       <th
                         key={`${weekIndex}-${dayIndex}`}
-                        className={`border border-slate-200 dark:border-slate-700 py-0 px-0 text-center text-[7px] font-medium ${isToday
+                        className={`border border-slate-300 dark:border-slate-600 py-0 px-0 text-center text-[7px] font-medium ${isToday
                             ? "bg-indigo-500 text-white"
                             : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
                           }`}
@@ -629,7 +655,7 @@ export default function MonthlyView() {
                     habit={habit}
                     dates={monthWeeks.flat()}
                     today={today}
-                    getWeekColor={(idx) => getWeekColor(Math.floor(idx / 7))}
+                    getWeekColor={getWeekColor}
                     onDelete={handleDelete}
                     toggleCompletion={toggleCompletion}
                     isHabitCompleted={isHabitCompleted}
@@ -647,14 +673,14 @@ export default function MonthlyView() {
         <table className="w-full border-collapse text-[9px] table-fixed">
           <tbody>
             <tr>
-              <td className="border-r border-slate-200 dark:border-slate-700 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[140px]">
+              <td className="border-r border-slate-300 dark:border-slate-600 py-1 px-1.5 bg-slate-100 dark:bg-slate-800 font-semibold text-[10px] text-slate-600 dark:text-slate-300 w-[160px]">
                 Progress
               </td>
               {monthWeeks.map((week, weekIndex) =>
                 week.map((date, dayIndex) => {
                   const dateStr = formatDateToString(date);
                   const total = habits.length;
-                  if (total === 0) return <td key={`${weekIndex}-${dayIndex}`} className={`border border-slate-200 dark:border-slate-700 ${getWeekColor(weekIndex)}`}></td>;
+                  if (total === 0) return <td key={`${weekIndex}-${dayIndex}`} className={`border border-slate-300 dark:border-slate-600 ${getWeekColor(weekIndex)}`}></td>;
 
                   const completed = habits.filter(h =>
                     h.trackingType === 'checkbox' ? isHabitCompleted(h.id, dateStr) : getCounter(h.id, dateStr) > 0
@@ -662,7 +688,7 @@ export default function MonthlyView() {
                   const percent = Math.round((completed / total) * 100);
 
                   return (
-                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center text-[7px] ${getWeekColor(weekIndex)} ${percent === 100 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <td key={`${weekIndex}-${dayIndex}`} className={`border-t border-r border-slate-300 dark:border-slate-600 py-0.5 px-0 text-center text-[7px] ${getWeekColor(weekIndex)} ${percent === 100 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {percent}%
                     </td>
                   );

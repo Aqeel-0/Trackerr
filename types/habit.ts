@@ -13,6 +13,7 @@ export interface Habit {
   targetCount?: number;
   unit?: string;
   displayOrder: number;
+  category?: string;
 }
 
 export interface HabitCompletion {
@@ -76,6 +77,7 @@ export interface CounterStats {
 export interface HabitContextType {
   habits: Habit[];
   completions: HabitCompletion[];
+  isLoading: boolean;
   addHabit: (habit: Omit<Habit, "id" | "createdAt" | "user_id" | "displayOrder">) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   toggleCompletion: (habitId: string, date: string) => Promise<void>;
