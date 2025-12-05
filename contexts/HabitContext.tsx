@@ -513,7 +513,9 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
           return c.date < earliest ? c.date : earliest;
         }, habitCompletions[0].date);
 
-        const earliestDate = new Date(earliestCompletion);
+        // Parse date string as local time (YYYY-MM-DD)
+        const [year, month, day] = earliestCompletion.split('-').map(Number);
+        const earliestDate = new Date(year, month - 1, day);
         if (earliestDate < createdDate) {
           createdDate = earliestDate;
         }
@@ -546,7 +548,9 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const weekGroups = new Map<string, number>();
 
       dailyData.forEach((d) => {
-        const date = new Date(d.date);
+        // Parse date string as local time (YYYY-MM-DD)
+        const [year, month, day] = d.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         const weekStart = new Date(date);
         const dayOfWeek = date.getDay();
         weekStart.setDate(date.getDate() - dayOfWeek);
@@ -556,7 +560,9 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
       const sortedWeeks = Array.from(weekGroups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
       sortedWeeks.forEach(([weekStart, count]) => {
-        const date = new Date(weekStart);
+        // Parse date string as local time (YYYY-MM-DD)
+        const [year, month, day] = weekStart.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         weeklyData.push({
           week: `${monthNames[date.getMonth()]} ${date.getDate()}`,
@@ -575,7 +581,9 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
       const monthGroups = new Map<string, number>();
       dailyData.forEach((d) => {
-        const date = new Date(d.date);
+        // Parse date string as local time (YYYY-MM-DD)
+        const [year, month, day] = d.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         monthGroups.set(monthKey, (monthGroups.get(monthKey) || 0) + d.count);
       });
@@ -586,7 +594,9 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
       const dayCounts = [0, 0, 0, 0, 0, 0, 0];
 
       dailyData.forEach((d) => {
-        const date = new Date(d.date);
+        // Parse date string as local time (YYYY-MM-DD)
+        const [year, month, day] = d.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         const dayOfWeek = date.getDay();
         weeklyBreakdown[dayOfWeek] += d.count;
         dayCounts[dayOfWeek]++;

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface Profile {
+  name: string | null;
   username: string | null;
   avatar_url: string | null;
 }
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const supabase = useMemo(() => createClient(), []);
 
   const refreshProfile = useCallback(async () => {
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('name, username, avatar_url')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('name, username, avatar_url')
           .eq('id', userId)
           .maybeSingle();
 
@@ -71,12 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
+
         if (mounted) {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           setLoading(false);
-          
+
           if (currentSession?.user) {
             loadProfile(currentSession.user.id);
           }
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           loadProfile(session.user.id);
         } else {
@@ -121,23 +122,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithEmail = async (emailOrUsername: string, password: string) => {
     let email = emailOrUsername;
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailOrUsername)) {
       const { data, error } = await supabase.rpc('get_email_by_username', { username_input: emailOrUsername });
-      
+
       if (error || !data) {
         throw new Error('Invalid username or password');
       }
-      
+
       email = data;
     }
-    
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) throw error;
   };
 
@@ -152,9 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       },
     });
-    
+
     if (error) throw error;
-    
+
     if (data.session) {
       setUser(data.user);
       setSession(data.session);

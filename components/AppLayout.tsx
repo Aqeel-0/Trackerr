@@ -206,6 +206,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
         onClose={() => setIsAddModalOpen(false)}
         title="Create New Habit"
         contentClassName="flex-1 flex flex-col overflow-hidden p-0"
+        mobileFullScreen={true}
       >
         <AddHabitForm onSuccess={() => setIsAddModalOpen(false)} />
       </Modal>

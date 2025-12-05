@@ -10,6 +10,7 @@ import {
   getDayName,
   getCurrentWeek,
 } from "@/utils/dateUtils";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import {
   DndContext,
   closestCenter,
@@ -97,7 +98,7 @@ function SortableHabitRow({
           </div>
           <button
             onClick={() => onDelete(habit.id, habit.name)}
-            className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 hidden sm:block"
+            className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-all duration-200 opacity-50 hover:opacity-100 p-1"
             title="Delete habit"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -117,7 +118,7 @@ function SortableHabitRow({
             className={`border p-0 text-center h-full relative ${isToday
               ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
               : `${getWeekColor(weekIndex)} border-slate-300 dark:border-slate-600`
-            }`}
+              }`}
           >
             {habit.trackingType === "checkbox" ? (
               <div className={`flex items-center justify-center h-full w-full ${isMobileView ? 'p-1' : 'p-0.5'}`}>
@@ -156,7 +157,7 @@ function SortableHabitRow({
                   className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
                     ? "opacity-20 cursor-not-allowed text-slate-400"
                     : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                  }`}
+                    }`}
                 >
                   −
                 </button>
@@ -187,7 +188,7 @@ function SortableHabitRow({
                   className={`${isMobileView ? 'w-4 h-6 text-xs' : 'w-3 h-4 text-[9px]'} flex items-center justify-center font-bold transition-colors ${isFuture
                     ? "opacity-20 cursor-not-allowed text-slate-400"
                     : "cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                  }`}
+                    }`}
                 >
                   +
                 </button>
@@ -208,10 +209,10 @@ function CompactWeekView({
   isHabitCompleted,
   setCounter,
   getCounter,
-  deleteHabit,
   reorderHabits,
   isMobileView = false,
   isTabletView = false,
+  onDelete,
 }: {
   habits: Habit[];
   weekDates: Date[];
@@ -220,10 +221,10 @@ function CompactWeekView({
   isHabitCompleted: (habitId: string, date: string) => boolean;
   setCounter: (habitId: string, date: string, count: number) => void;
   getCounter: (habitId: string, date: string) => number;
-  deleteHabit: (id: string) => void;
   reorderHabits: (habits: Habit[]) => void;
   isMobileView?: boolean;
   isTabletView?: boolean;
+  onDelete: (id: string, name: string) => void;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -238,12 +239,6 @@ function CompactWeekView({
       const oldIndex = habits.findIndex((h) => h.id === active.id);
       const newIndex = habits.findIndex((h) => h.id === over.id);
       reorderHabits(arrayMove(habits, oldIndex, newIndex));
-    }
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteHabit(id);
     }
   };
 
@@ -302,9 +297,9 @@ function CompactWeekView({
                 <th
                   key={idx}
                   className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${isToday
-                      ? "bg-indigo-500 text-white"
-                      : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
-                  }`}
+                    ? "bg-indigo-500 text-white"
+                    : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
+                    }`}
                 >
                   <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
                   <div className={`font-bold ${isMobileView ? 'text-xs' : 'text-sm'}`}>{date.getDate()}</div>
@@ -325,7 +320,7 @@ function CompactWeekView({
                 dates={weekDates}
                 today={today}
                 getWeekColor={getCellBg}
-                onDelete={handleDelete}
+                onDelete={onDelete}
                 toggleCompletion={toggleCompletion}
                 isHabitCompleted={isHabitCompleted}
                 setCounter={setCounter}
@@ -351,11 +346,16 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const [today, setToday] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; habitId: string; habitName: string }>({
+    isOpen: false,
+    habitId: "",
+    habitName: "",
+  });
 
   useEffect(() => {
     setCurrentDate(new Date());
     setToday(new Date());
-    
+
     const checkViewMode = () => {
       const width = window.innerWidth;
       if (width < 640) {
@@ -366,7 +366,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
         setViewMode('desktop');
       }
     };
-    
+
     checkViewMode();
     window.addEventListener('resize', checkViewMode);
     return () => window.removeEventListener('resize', checkViewMode);
@@ -409,9 +409,14 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
     setWeekOffset(0);
   };
 
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteHabit(id);
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeleteModal({ isOpen: true, habitId: id, habitName: name });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteModal.habitId) {
+      deleteHabit(deleteModal.habitId);
+      setDeleteModal({ ...deleteModal, isOpen: false });
     }
   };
 
@@ -419,7 +424,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
     if (!today) return [];
     const currentWeek = getCurrentWeek();
     const dates: Date[] = [];
-    
+
     for (let w = 0; w < weeksToShow; w++) {
       for (let d = 0; d < 7; d++) {
         const newDate = new Date(currentWeek[d]);
@@ -433,14 +438,14 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const getWeekLabel = (weeksToShow: number): string => {
     const dates = getWeekDates(weeksToShow);
     if (dates.length === 0) return "";
-    
+
     const start = dates[0];
     const end = dates[dates.length - 1];
-    
+
     if (weekOffset === 0 && weeksToShow === 1) return "This Week";
     if (weekOffset === -1 && weeksToShow === 1) return "Last Week";
     if (weekOffset === 1 && weeksToShow === 1) return "Next Week";
-    
+
     return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
   };
 
@@ -498,7 +503,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
               <p className="text-lg font-semibold text-slate-800 dark:text-slate-200">Create Your First Habit</p>
               <p className="text-sm text-slate-500 dark:text-slate-400">Start building better routines today</p>
             </div>
-        </div>
+          </div>
         )}
       </div>
     );
@@ -507,7 +512,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   if (viewMode === 'mobile' || viewMode === 'tablet') {
     const weeksToShow = viewMode === 'mobile' ? 1 : 2;
     const weekDates = getWeekDates(weeksToShow);
-    
+
     return (
       <div className="h-full flex flex-col bg-white dark:bg-slate-900">
         {/* Header */}
@@ -554,12 +559,18 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
             isHabitCompleted={isHabitCompleted}
             setCounter={setCounter}
             getCounter={getCounter}
-            deleteHabit={deleteHabit}
+            onDelete={handleDeleteClick}
             reorderHabits={reorderHabits}
             isMobileView={viewMode === 'mobile'}
             isTabletView={viewMode === 'tablet'}
           />
         </div>
+        <DeleteConfirmationModal
+          isOpen={deleteModal.isOpen}
+          habitName={deleteModal.habitName}
+          onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+          onConfirm={handleConfirmDelete}
+        />
       </div>
     );
   }
@@ -632,8 +643,8 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
                       <th
                         key={`${weekIndex}-${dayIndex}`}
                         className={`border border-slate-300 dark:border-slate-600 py-0 px-0 text-center text-[7px] font-medium ${isToday
-                            ? "bg-indigo-500 text-white"
-                            : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
+                          ? "bg-indigo-500 text-white"
+                          : `${getWeekColor(weekIndex)} text-slate-500 dark:text-slate-400`
                           }`}
                       >
                         <div className={isToday ? "" : "opacity-70"}>{getDayName(date)}</div>
@@ -656,7 +667,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
                     dates={monthWeeks.flat()}
                     today={today}
                     getWeekColor={getWeekColor}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteClick}
                     toggleCompletion={toggleCompletion}
                     isHabitCompleted={isHabitCompleted}
                     setCounter={setCounter}
@@ -698,6 +709,13 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
           </tbody>
         </table>
       </div>
-    </div>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        habitName={deleteModal.habitName}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={handleConfirmDelete}
+      />
+    </div >
   );
 }
