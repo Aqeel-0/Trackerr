@@ -37,7 +37,7 @@ export default function ProfileMenu() {
     router.push('/profile');
   };
 
-  const displayName = profile?.username || user?.email?.split('@')[0] || 'User';
+  const displayName = profile?.name || profile?.username || user?.email?.split('@')[0] || 'User';
   const displayUsername = profile?.username ? `@${profile.username}` : user?.email;
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
 

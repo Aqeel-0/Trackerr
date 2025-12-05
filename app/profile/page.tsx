@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
-
 import ProfileMenu from '@/components/ProfileMenu';
 
 export default function ProfilePage() {
@@ -14,10 +13,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -35,11 +36,12 @@ export default function ProfilePage() {
 
     const { data } = await supabase
       .from('profiles')
-      .select('username, avatar_url')
+      .select('name, username, avatar_url')
       .eq('id', user.id)
       .maybeSingle();
 
     if (data) {
+      setName(data.name || '');
       setUsername(data.username || '');
       setAvatarUrl(data.avatar_url || '');
       setAvatarPreview(data.avatar_url || '');
@@ -58,8 +60,8 @@ export default function ProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setMessage({ type: 'error', text: 'Image must be less than 2MB' });
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'Image must be less than 5MB' });
         return;
       }
       setAvatarFile(file);
@@ -79,7 +81,7 @@ export default function ProfilePage() {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = fileName;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, avatarFile, {
           cacheControl: '3600',
@@ -100,9 +102,83 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveAvatar = async () => {
+    if (!user || !avatarFile) return;
+
+    setIsSaving(true);
+    setMessage(null);
+
+    try {
+      const uploadedUrl = await uploadAvatar();
+      if (!uploadedUrl) {
+        throw new Error('Failed to upload avatar');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: uploadedUrl })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setAvatarUrl(uploadedUrl);
+      setAvatarFile(null);
+      setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+      setTimeout(() => setMessage(null), 3000);
+      await refreshProfile();
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to update avatar'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveName = async () => {
     if (!user) return;
-    
+
+    setIsSaving(true);
+    setMessage(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ name: name })
+        .eq('id', user.id)
+        .select();
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            name: name,
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      setIsEditingName(false);
+      setMessage({ type: 'success', text: 'Name updated successfully!' });
+      setTimeout(() => setMessage(null), 3000);
+      await refreshProfile();
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to update name'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveUsername = async () => {
+    if (!user) return;
+
     if (!username || username.trim() === '') {
       setMessage({ type: 'error', text: 'Username is required' });
       return;
@@ -117,23 +193,9 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
-      let newAvatarUrl = avatarUrl;
-
-      if (avatarFile) {
-        const uploadedUrl = await uploadAvatar();
-        if (uploadedUrl) {
-          newAvatarUrl = uploadedUrl;
-        } else {
-          throw new Error('Failed to upload avatar');
-        }
-      }
-
       const { data, error } = await supabase
         .from('profiles')
-        .update({
-          username: username.toLowerCase(),
-          avatar_url: newAvatarUrl,
-        })
+        .update({ username: username.toLowerCase() })
         .eq('id', user.id)
         .select();
 
@@ -145,41 +207,28 @@ export default function ProfilePage() {
       }
 
       if (!data || data.length === 0) {
-        const { data: insertData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: user.id,
             username: username.toLowerCase(),
-            avatar_url: newAvatarUrl,
-          })
-          .select();
+          });
 
         if (insertError) throw insertError;
       }
 
-      setAvatarUrl(newAvatarUrl);
-      setAvatarFile(null);
-      setIsEditing(false);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setIsEditingUsername(false);
+      setMessage({ type: 'success', text: 'Username updated successfully!' });
       setTimeout(() => setMessage(null), 3000);
-
       await refreshProfile();
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error instanceof Error ? error.message : 'Failed to update profile'
+        text: error instanceof Error ? error.message : 'Failed to update username'
       });
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCancel = () => {
-    loadProfile();
-    setAvatarFile(null);
-    setAvatarPreview(avatarUrl);
-    setIsEditing(false);
-    setMessage(null);
   };
 
   if (loading) {
@@ -205,194 +254,291 @@ export default function ProfilePage() {
       {/* Main Content */}
       <div className="flex-1 md:ml-20 xl:ml-64 transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-4 md:hidden">
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            {/*Mobile Hamburger Button */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 text-slate-600 dark:text-slate-400"
+              className="md:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Open menu"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
                 <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-          </div>
 
-          <div className="flex-1"></div>
-
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            {/* Mobile Logo */}
+            <div className="md:hidden w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
-            </button>
-            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors relative">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-            </button>
-
-            <div className="pl-2 border-l border-slate-200 dark:border-slate-800">
-              <ProfileMenu />
             </div>
-          </div>
-        </header>
 
-        <main className="p-8 max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <span className="w-2 h-6 bg-indigo-600 rounded-full"></span>
+            <h1 className="hidden md:block text-base sm:text-lg font-bold text-slate-800 dark:text-white">
               Profile
             </h1>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 md:p-12 shadow-sm border border-slate-200 dark:border-slate-800">
-            {message && (
-              <div className={`mb-8 p-4 rounded-xl ${message.type === 'success'
-                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
-                }`}>
-                {message.text}
+          <div className="flex items-center gap-3">
+            <ProfileMenu />
+          </div>
+        </header>
+
+        {/* Toast Notification - Fixed Position at Top Right */}
+        {message && (
+          <div
+            className={`fixed top-20 right-4 md:right-6 z-50 p-4 rounded-xl shadow-lg border max-w-sm animate-slide-in-right ${message.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
+              }`}
+          >
+            <div className="flex items-start gap-3">
+              {message.type === 'success' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-medium">{message.text}</p>
               </div>
+              <button
+                onClick={() => setMessage(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex-shrink-0"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <main className="p-4 md:p-8 max-w-2xl mx-auto">
+          {/* Back Button - Only show on mobile */}
+          <button
+            onClick={() => router.push('/')}
+            className="mb-6 p-2.5 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 md:hidden"
+            aria-label="Go back to home"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Avatar Section - Outside Card */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative group mb-4">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-lg ring-4 ring-white dark:ring-slate-900">
+                {avatarPreview ? (
+                  <Image
+                    src={avatarPreview}
+                    alt={name || username || 'User'}
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              <label className="absolute bottom-0 right-0 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {avatarFile && (
+              <button
+                onClick={handleSaveAvatar}
+                disabled={isSaving}
+                className="mb-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save Avatar'}
+              </button>
             )}
 
-            <div className="flex flex-col md:flex-row gap-12 lg:gap-24">
-              {/* Left Column - Avatar & Actions */}
-              <div className="flex flex-col gap-6 w-full md:w-auto md:flex-shrink-0">
-                <div className="relative group mx-auto md:mx-0">
-                  <div className="w-64 h-64 rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-inner">
-                    {avatarPreview ? (
-                      <Image
-                        src={avatarPreview}
-                        alt={username || 'User'}
-                        width={256}
-                        height={256}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-1">
+              {name || username || 'User'}
+            </h2>
+          </div>
 
-                  {isEditing && (
-                    <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm rounded-3xl cursor-pointer opacity-0 group-hover:opacity-100 transition-all">
-                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-medium text-sm">Change Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-
-                  {!isEditing && (
-                    <div className="absolute top-4 left-4 w-8 h-8 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="w-24 h-20 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl flex items-center justify-center text-xs font-bold text-slate-400 dark:text-slate-600 tracking-wider">
-                    LOGO
-                  </div>
-                  <div className="flex-1 h-20 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-600 hover:border-indigo-500 hover:text-indigo-500 transition-colors cursor-pointer group">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-y-1 transition-transform">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
+          {/* Settings Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800">
+            <div className="space-y-3">
+              {/* Name Setting */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 transition-colors">
+                <div className={`flex gap-3 ${isEditingName ? 'items-start' : 'items-center'}`}>
+                  <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600 dark:text-indigo-400">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    <span className="text-[10px] font-bold tracking-wider uppercase">Vendor Documents</span>
                   </div>
+
+                  {isEditingName ? (
+                    <>
+                      <div className="flex-1">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Name</div>
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          style={{ fontSize: '16px' }}
+                          placeholder="Enter your name"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0 pt-6">
+                        <button
+                          onClick={() => {
+                            loadProfile();
+                            setIsEditingName(false);
+                          }}
+                          className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={handleSaveName}
+                          disabled={isSaving}
+                          className="p-2.5 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-slate-900 dark:text-white mb-0.5">Name</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">{name || 'Not set'}</div>
+                      </div>
+                      <button
+                        onClick={() => setIsEditingName(true)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex-shrink-0"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Right Column - Details */}
-              <div className="flex-1 space-y-8">
-                <div className="space-y-6">
-                  {/* Username */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                      Username:
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                        className="w-full px-0 py-2 bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-400 transition-colors"
-                        placeholder="Enter username"
-                      />
-                    ) : (
-                      <div className="text-slate-600 dark:text-slate-400">
-                        {username || 'Not set'}
+              {/* Username Setting */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 transition-colors">
+                <div className={`flex gap-3 ${isEditingUsername ? 'items-start' : 'items-center'}`}>
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-600 dark:text-purple-400">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  </div>
+
+                  {isEditingUsername ? (
+                    <>
+                      <div className="flex-1">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Username</div>
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          style={{ fontSize: '16px' }}
+                          placeholder="Enter username"
+                          autoFocus
+                        />
                       </div>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                      Email:
-                    </label>
-                    <div className="text-slate-600 dark:text-slate-400">
-                      {email}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  {!isEditing ? (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="px-6 py-2.5 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-semibold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center gap-2 uppercase tracking-wide"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                      Edit Profile
-                    </button>
+                      <div className="flex gap-2 flex-shrink-0 pt-6">
+                        <button
+                          onClick={() => {
+                            loadProfile();
+                            setIsEditingUsername(false);
+                          }}
+                          className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={handleSaveUsername}
+                          disabled={isSaving}
+                          className="p-2.5 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </button>
+                      </div>
+                    </>
                   ) : (
-                    <div className="flex gap-4">
+                    <>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-slate-900 dark:text-white mb-0.5">Username</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">{username || 'Not set'}</div>
+                      </div>
                       <button
-                        onClick={handleCancel}
-                        className="px-6 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-wide"
+                        onClick={() => setIsEditingUsername(true)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex-shrink-0"
                       >
-                        Cancel
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
                       </button>
-                      <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 uppercase tracking-wide shadow-lg shadow-indigo-500/30"
-                      >
-                        {isSaving && (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        )}
-                        <span>Save Changes</span>
-                      </button>
-                    </div>
+                    </>
                   )}
+                </div>
+              </div>
+
+              {/* Email Setting (Read-only) */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-400">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-slate-900 dark:text-white mb-0.5">Email</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">{email}</div>
+                  </div>
                 </div>
               </div>
             </div>

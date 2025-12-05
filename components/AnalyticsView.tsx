@@ -49,23 +49,23 @@ function StreakDisplay({ current, longest, color }: { current: number; longest: 
 }
 
 
-function CurrentWeekChart({ 
-  habitId, 
-  color, 
-  isHabitCompleted 
-}: { 
-  habitId: string; 
-  color: string; 
+function CurrentWeekChart({
+  habitId,
+  color,
+  isHabitCompleted
+}: {
+  habitId: string;
+  color: string;
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const today = new Date();
   const currentDayOfWeek = today.getDay();
   const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
-  
+
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - daysFromMonday);
-  
+
   const chartData = days.map((day, index) => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + index);
@@ -85,13 +85,13 @@ function CurrentWeekChart({
     <div className="flex justify-between gap-1 sm:gap-2">
       {chartData.map((d, i) => (
         <div key={i} className="flex flex-col items-center flex-1">
-          <div 
+          <div
             className={`w-full h-10 sm:h-16 rounded-lg flex items-center justify-center text-sm sm:text-lg font-bold transition-all ${d.isFuture
-                ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-300 dark:text-gray-600' 
-                : d.completed 
-                  ? 'text-white' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-            } ${d.isToday ? 'ring-2 ring-indigo-500 ring-offset-1 sm:ring-offset-2 dark:ring-offset-gray-800' : ''}`}
+              ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-300 dark:text-gray-600'
+              : d.completed
+                ? 'text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+              } ${d.isToday ? 'ring-2 ring-indigo-500 ring-offset-1 sm:ring-offset-2 dark:ring-offset-gray-800' : ''}`}
             style={{ backgroundColor: d.completed ? color : undefined }}
           >
             {d.isFuture ? '—' : d.completed ? '✓' : '✗'}
@@ -106,13 +106,13 @@ function CurrentWeekChart({
 }
 
 
-function FourMonthHeatmap({ 
-  habitId, 
-  color, 
-  isHabitCompleted 
-}: { 
-  habitId: string; 
-  color: string; 
+function FourMonthHeatmap({
+  habitId,
+  color,
+  isHabitCompleted
+}: {
+  habitId: string;
+  color: string;
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
   const [isMobile, setIsMobile] = useState(false);
@@ -127,17 +127,17 @@ function FourMonthHeatmap({
   const today = new Date();
   const monthsToShow = isMobile ? 2 : 4;
   const startMonth = new Date(today.getFullYear(), today.getMonth() - (monthsToShow - 1), 1);
-  
+
   const months: { name: string; weeks: { date: string; completed: boolean; isFuture: boolean }[][] }[] = [];
-  
+
   for (let m = 0; m < monthsToShow; m++) {
     const monthDate = new Date(startMonth.getFullYear(), startMonth.getMonth() + m, 1);
     const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
     const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
-    
+
     const weeks: { date: string; completed: boolean; isFuture: boolean }[][] = [];
     let currentWeek: { date: string; completed: boolean; isFuture: boolean }[] = [];
-    
+
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), d);
       const dateStr = formatDateToString(date);
@@ -173,8 +173,8 @@ function FourMonthHeatmap({
                         opacity: day.isFuture ? 0.3 : 1
                       }}
                       title={`${day.date}: ${day.isFuture ? 'Future' : day.completed ? 'Done' : 'Missed'}`}
-          />
-        ))}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
@@ -185,12 +185,12 @@ function FourMonthHeatmap({
   );
 }
 
-function CheckboxHabitCard({ 
-  habit, 
+function CheckboxHabitCard({
+  habit,
   stats,
-  isHabitCompleted 
-}: { 
-  habit: Habit; 
+  isHabitCompleted
+}: {
+  habit: Habit;
   stats: CheckboxStats;
   isHabitCompleted: (habitId: string, date: string) => boolean;
 }) {
@@ -202,9 +202,9 @@ function CheckboxHabitCard({
     <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
       <div className="p-3 sm:p-5 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-xl sm:text-2xl">{habit.icon}</span>
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{habit.name}</h3>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl">{habit.icon}</span>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{habit.name}</h3>
           </div>
           <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: habit.color + '20' }}>
             <span className="text-xs sm:text-sm font-bold" style={{ color: habit.color }}>{last30Rate}%</span>
@@ -230,11 +230,16 @@ function CheckboxHabitCard({
   );
 }
 
-function TrendLineChart({ data, color, unit }: { data: { date: string; count: number; label?: string }[]; color: string; unit?: string }) {
-  const chartData = data.map(d => ({
-    ...d,
-    label: d.label || new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }));
+function TrendLineChart({ data, color, unit, habitId }: { data: { date: string; count: number; label?: string }[]; color: string; unit?: string; habitId: string }) {
+  const chartData = data.map(d => {
+    // Parse date string as local time (YYYY-MM-DD)
+    const [year, month, day] = d.date.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return {
+      ...d,
+      label: d.label || date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    };
+  });
 
   const avgValue = data.length > 0 ? data.reduce((s, d) => s + d.count, 0) / data.length : 0;
 
@@ -242,20 +247,20 @@ function TrendLineChart({ data, color, unit }: { data: { date: string; count: nu
     <ResponsiveContainer width="100%" height={180}>
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
-          <linearGradient id={`counterGradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`counterGradient-${habitId}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.4} />
             <stop offset="100%" stopColor={color} stopOpacity={0.05} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-        <XAxis 
-          dataKey="label" 
+        <XAxis
+          dataKey="label"
           tick={{ fontSize: 9, fill: '#6b7280' }}
           axisLine={false}
           tickLine={false}
           interval="preserveStartEnd"
         />
-        <YAxis 
+        <YAxis
           tick={{ fontSize: 10, fill: '#6b7280' }}
           axisLine={false}
           tickLine={false}
@@ -278,7 +283,7 @@ function TrendLineChart({ data, color, unit }: { data: { date: string; count: nu
           dataKey="count"
           stroke={color}
           strokeWidth={2}
-          fill={`url(#counterGradient-${color.replace('#', '')})`}
+          fill={`url(#counterGradient-${habitId})`}
           dot={false}
           activeDot={{ r: 4, fill: color }}
         />
@@ -335,7 +340,9 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
   const getAvailableMonths = () => {
     const months = new Set<string>();
     stats.dailyData.forEach(d => {
-      const date = new Date(d.date);
+      // Parse date string as local time (YYYY-MM-DD)
+      const [year, month, day] = d.date.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       months.add(monthKey);
     });
@@ -435,6 +442,11 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
 
   const { chartData, periodLabel, total, average, peakDay } = getViewData();
 
+  const todayStr = formatDateToString(new Date());
+  const todayCount = stats.dailyData.find(d => d.date === todayStr)?.count ?? 0;
+  const targetLabel = habit.targetCount ? ` / ${habit.targetCount}` : '';
+  const isTargetMet = habit.targetCount ? todayCount >= habit.targetCount : false;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
       <div className="p-3 sm:p-5 border-b border-gray-100 dark:border-gray-700">
@@ -496,11 +508,16 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
 
       <div className="p-3 sm:p-5 space-y-4 sm:space-y-5">
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-2 text-center">
-            <div className="text-sm sm:text-lg font-bold text-indigo-600 dark:text-indigo-400">
-              {total.toLocaleString()}
-          </div>
-            <div className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400">Total</div>
+          <div className={`rounded-lg p-2 text-center ${isTargetMet ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+            <div className={`text-sm sm:text-lg font-bold flex items-center justify-center gap-1 ${isTargetMet ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {todayCount}{targetLabel}
+              {habit.targetCount && (
+                <span className="text-base">
+                  {isTargetMet ? '✓' : '✗'}
+                </span>
+              )}
+            </div>
+            <div className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400">Today</div>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 text-center">
             <div className="text-sm sm:text-lg font-bold text-blue-600 dark:text-blue-400">
@@ -522,7 +539,7 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
           <h4 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
             {periodLabel}
           </h4>
-          <TrendLineChart data={chartData} color={habit.color} unit={habit.unit} />
+          <TrendLineChart data={chartData} color={habit.color || '#6366f1'} unit={habit.unit} habitId={habit.id} />
         </div>
       </div>
     </div>
@@ -530,17 +547,17 @@ function CounterHabitCard({ habit, stats }: { habit: Habit; stats: CounterStats 
 }
 
 
-function OverallStatsCard({ 
-  title, 
-  value, 
-  subtitle, 
-  icon, 
-  gradient 
-}: { 
-  title: string; 
-  value: string | number; 
-  subtitle?: string; 
-  icon: string; 
+function OverallStatsCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  gradient
+}: {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: string;
   gradient: string;
 }) {
   return (
@@ -555,15 +572,17 @@ function OverallStatsCard({
   );
 }
 
-function TotalProgressChart({ 
-  data, 
-  averageCompletion 
-}: { 
+function TotalProgressChart({
+  data,
+  averageCompletion
+}: {
   data: { date: string; percentage: number; completed: number; total: number }[];
   averageCompletion: number;
 }) {
   const chartData = data.map(d => {
-    const date = new Date(d.date);
+    // Parse date string as local time (YYYY-MM-DD)
+    const [year, month, day] = d.date.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return {
       ...d,
       label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -635,14 +654,14 @@ function TotalProgressChart({
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-          <XAxis 
-            dataKey="label" 
+          <XAxis
+            dataKey="label"
             tick={{ fontSize: 9, fill: '#6b7280' }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
-          <YAxis 
+          <YAxis
             tick={{ fontSize: 10, fill: '#6b7280' }}
             axisLine={false}
             tickLine={false}
@@ -652,10 +671,10 @@ function TotalProgressChart({
             width={35}
           />
           <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine 
-            y={averageCompletion} 
-            stroke="#6366f1" 
-            strokeDasharray="5 5" 
+          <ReferenceLine
+            y={averageCompletion}
+            stroke="#6366f1"
+            strokeDasharray="5 5"
             strokeWidth={2}
           />
           <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
@@ -957,7 +976,7 @@ export default function AnalyticsView() {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-  
+
   const iterDate = new Date(firstDayOfMonth);
   while (iterDate <= today) {
     const dateStr = formatDateToString(iterDate);
@@ -1148,9 +1167,9 @@ export default function AnalyticsView() {
           </div>
         </div>
 
-        <TotalProgressChart 
-          data={dailyProgressData} 
-          averageCompletion={overallAverageCompletion} 
+        <TotalProgressChart
+          data={dailyProgressData}
+          averageCompletion={overallAverageCompletion}
         />
 
         {checkboxHabits.length > 0 && (
@@ -1163,7 +1182,7 @@ export default function AnalyticsView() {
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 ({checkboxHabits.length})
               </span>
-          </div>
+            </div>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 -mt-2 sm:-mt-4 ml-3 sm:ml-4">
               Daily yes/no habits tracked for consistency
             </p>
@@ -1176,7 +1195,7 @@ export default function AnalyticsView() {
                   isHabitCompleted={isHabitCompleted}
                 />
               ))}
-          </div>
+            </div>
           </div>
         )}
 
@@ -1190,7 +1209,7 @@ export default function AnalyticsView() {
               <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 ({counterHabits.length})
               </span>
-                  </div>
+            </div>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 -mt-2 sm:-mt-4 ml-3 sm:ml-4">
               Quantity-based habits for tracking amounts
             </p>

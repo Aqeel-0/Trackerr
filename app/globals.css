@@ -199,9 +199,19 @@ table td, table th {
   to { transform: translateX(0); }
 }
 
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
 @keyframes slide-out-right {
   from { transform: translateX(0); }
   to { transform: translateX(100%); }
+}
+
+@keyframes slide-out-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
 }
 
 .animate-fade-in {
@@ -222,6 +232,10 @@ table td, table th {
 
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
 }
 
 .animate-slide-out-right {
