@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useHabits } from "@/contexts/HabitContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   formatDateToString,
   isSameDay,
@@ -258,7 +259,7 @@ function SortableHabitRow({
                   className={`
                     ${isMobileView ? 'w-6 h-6' : isTabletView ? 'w-5 h-5' : 'w-4 h-4'} flex items-center justify-center transition-all duration-100 rounded-sm border
                     ${isFuture
-                      ? "opacity-20 cursor-not-allowed bg-transparent border-slate-300 dark:border-slate-700"
+                      ? "opacity-50 cursor-not-allowed bg-transparent border-slate-300 dark:border-slate-600"
                       : "cursor-pointer"
                     }
                     ${isCompleted
@@ -521,6 +522,7 @@ interface MonthlyViewProps {
 
 export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits, isLoading } = useHabits();
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -551,6 +553,31 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
     return () => window.removeEventListener('resize', checkViewMode);
   }, []);
 
+  // Wrapper functions for auth check
+  const handleToggleCompletion = (habitId: string, date: string) => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    toggleCompletion(habitId, date);
+  };
+
+  const handleSetCounter = (habitId: string, date: string, count: number) => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    setCounter(habitId, date, count);
+  };
+
+  const handleDeleteClick = (id: string, name: string) => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    setDeleteModal({ isOpen: true, habitId: id, habitName: name });
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -559,6 +586,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!user) return; // Disable reordering for demo
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -586,10 +614,6 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const goToCurrentMonth = () => {
     setCurrentDate(new Date());
     setWeekOffset(0);
-  };
-
-  const handleDeleteClick = (id: string, name: string) => {
-    setDeleteModal({ isOpen: true, habitId: id, habitName: name });
   };
 
   const handleConfirmDelete = () => {
@@ -734,9 +758,9 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
             habits={habits}
             weekDates={weekDates}
             today={today}
-            toggleCompletion={toggleCompletion}
+            toggleCompletion={handleToggleCompletion}
             isHabitCompleted={isHabitCompleted}
-            setCounter={setCounter}
+            setCounter={handleSetCounter}
             getCounter={getCounter}
             onDelete={handleDeleteClick}
             reorderHabits={reorderHabits}
@@ -847,9 +871,9 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
                     today={today}
                     getWeekColor={getWeekColor}
                     onDelete={handleDeleteClick}
-                    toggleCompletion={toggleCompletion}
+                    toggleCompletion={handleToggleCompletion}
                     isHabitCompleted={isHabitCompleted}
-                    setCounter={setCounter}
+                    setCounter={handleSetCounter}
                     getCounter={getCounter}
                   />
                 ))}

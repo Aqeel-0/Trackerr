@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useHabits } from "@/contexts/HabitContext";
 import { TrackingType } from "@/types/habit";
-import { PRESET_HABITS, ICON_OPTIONS } from "@/data/presetHabits";
+import { PRESET_HABITS } from "@/data/presetHabits";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 
 const CATEGORIES = [
   { name: "Health", color: "#10b981", icon: "💪" }, // Emerald
@@ -13,19 +14,6 @@ const CATEGORIES = [
   { name: "Social", color: "#ec4899", icon: "👥" }, // Pink
   { name: "Other", color: "#64748b", icon: "✨" }, // Slate
 ];
-
-const ICON_KEYWORDS: Record<string, string> = {
-  run: "🏃", running: "🏃", jog: "🏃",
-  gym: "💪", workout: "💪", lift: "💪",
-  read: "📚", book: "📚", study: "📚",
-  meditate: "🧘", mindfulness: "🧘",
-  sleep: "😴", bed: "😴",
-  water: "💧", drink: "💧",
-  code: "💻", program: "💻", work: "💼",
-  walk: "🚶", walking: "🚶",
-  eat: "🍎", food: "🍎", diet: "🥗",
-  journal: "✍️", write: "✍️",
-};
 
 interface AddHabitFormProps {
   onSuccess?: () => void;
@@ -49,17 +37,7 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    setName(newName);
-
-    // Smart Icon Prediction
-    const lowerName = newName.toLowerCase();
-    for (const [keyword, emoji] of Object.entries(ICON_KEYWORDS)) {
-      if (lowerName.includes(keyword)) {
-        setIcon(emoji);
-        break;
-      }
-    }
+    setName(e.target.value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -93,6 +71,8 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
     setCustomCategory("");
     setActiveTab("create");
   };
+
+
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -163,45 +143,45 @@ export default function AddHabitForm({ onSuccess }: AddHabitFormProps) {
             {/* Main Inputs */}
             <div className="space-y-4">
               {/* Name & Icon */}
-              <div className="grid grid-cols-[auto_1fr] gap-4">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowIconPicker(!showIconPicker)}
-                    className="w-14 h-14 rounded-2xl border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-800 flex items-center justify-center text-2xl transition-all"
-                  >
-                    {icon}
-                  </button>
-                  {showIconPicker && (
-                    <div className="absolute top-full left-0 mt-2 p-3 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-200">
-                      <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                        {ICON_OPTIONS.map((opt, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => {
-                              setIcon(opt);
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">
+                  Habit Name
+                </label>
+                <div className="flex gap-4 items-center">
+                  <div className="relative flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowIconPicker(!showIconPicker)}
+                      className="w-14 h-14 rounded-2xl border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-800 flex items-center justify-center text-2xl transition-all"
+                    >
+                      {icon}
+                    </button>
+                    {showIconPicker && (
+                      <div className="absolute top-full left-0 mt-2 z-50">
+                        <div className="fixed inset-0 z-40" onClick={() => setShowIconPicker(false)} />
+                        <div className="relative z-50 animate-in fade-in zoom-in-95 duration-200">
+                          <EmojiPicker
+                            onEmojiClick={(emojiData) => {
+                              setIcon(emojiData.emoji);
                               setShowIconPicker(false);
                             }}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-lg"
-                          >
-                            {opt}
-                          </button>
-                        ))}
+                            theme={Theme.AUTO}
+                            width={300}
+                            height={400}
+                            searchDisabled={false}
+                            skinTonesDisabled
+                            previewConfig={{ showPreview: false }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">
-                    Habit Name
-                  </label>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={name}
                     onChange={handleNameChange}
                     placeholder="e.g. Read 30 mins"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
                   />
                 </div>
               </div>

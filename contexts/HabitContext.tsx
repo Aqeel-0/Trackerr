@@ -5,6 +5,7 @@ import { Habit, HabitCompletion, HabitContextType, CheckboxStats, CounterStats }
 import { formatDateToString, calculateStreak } from "@/utils/dateUtils";
 import { useAuth } from "./AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { PRESET_HABITS } from "@/data/presetHabits";
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined);
 
@@ -17,7 +18,61 @@ export function HabitProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) {
-      setIsLoaded(false);
+      const dummyHabits = PRESET_HABITS.slice(0, 3).map((h, i) => ({
+        id: `demo-${i}`,
+        user_id: 'demo',
+        name: h.name,
+        description: h.description,
+        color: h.color,
+        icon: h.icon,
+        trackingType: h.trackingType,
+        targetCount: 1,
+        unit: '',
+        category: 'Health',
+        displayOrder: i,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      const today = new Date();
+      const dummyCompletions: HabitCompletion[] = [];
+
+      // Generate dummy data for the last 30 days
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = formatDateToString(date);
+
+        // Randomly complete habits
+        dummyHabits.forEach(habit => {
+          // 70% chance of completion
+          if (Math.random() > 0.3) {
+            if (habit.trackingType === 'checkbox') {
+              dummyCompletions.push({
+                id: `demo-comp-${habit.id}-${dateStr}`,
+                habitId: habit.id,
+                user_id: 'demo',
+                date: dateStr,
+                completed: true
+              });
+            } else {
+              // For counter, add a random count between 1 and target + 2
+              const count = Math.floor(Math.random() * 4) + 1;
+              dummyCompletions.push({
+                id: `demo-comp-${habit.id}-${dateStr}`,
+                habitId: habit.id,
+                user_id: 'demo',
+                date: dateStr,
+                completed: true,
+                count: count
+              });
+            }
+          }
+        });
+      }
+
+      setHabits(dummyHabits);
+      setCompletions(dummyCompletions);
+      setIsLoaded(true);
       return;
     }
 

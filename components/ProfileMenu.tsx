@@ -41,6 +41,31 @@ export default function ProfileMenu() {
   const displayUsername = profile?.username ? `@${profile.username}` : user?.email;
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
 
+  const [isWiggling, setIsWiggling] = useState(false);
+
+  useEffect(() => {
+    const handleLoginRequired = () => {
+      setIsWiggling(true);
+      setTimeout(() => setIsWiggling(false), 500);
+    };
+
+    window.addEventListener('login-required', handleLoginRequired);
+    return () => window.removeEventListener('login-required', handleLoginRequired);
+  }, []);
+
+  if (!user) {
+    return (
+      <button
+        onClick={() => router.push('/login')}
+        className={`px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg ${isWiggling ? 'animate-wiggle ring-4 ring-indigo-500/30' : ''
+          }`}
+        style={isWiggling ? { animation: 'wiggle 0.5s ease-in-out' } : {}}
+      >
+        Login
+      </button>
+    );
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button

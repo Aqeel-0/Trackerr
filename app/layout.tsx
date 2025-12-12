@@ -22,6 +22,13 @@ export const metadata: Metadata = {
   description: "Track your daily habits and build better routines",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,9 +39,9 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>
-          <HabitProvider>
-            {children}
-          </HabitProvider>
+            <HabitProvider>
+              {children}
+            </HabitProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
