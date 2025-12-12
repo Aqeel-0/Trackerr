@@ -29,11 +29,12 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
     return "tracker";
   };
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  // Removed automatic redirect to allow demo mode
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     router.push('/login');
+  //   }
+  // }, [user, loading, router]);
 
   useEffect(() => {
     setFormattedDate(
@@ -55,6 +56,14 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
     }
   };
 
+  const handleAddHabit = () => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    setIsAddModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -66,9 +75,10 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  // Allow rendering even if !user for demo mode
+  // if (!user) {
+  //   return null;
+  // }
 
   const currentView = getCurrentView();
 
@@ -77,7 +87,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
       <Sidebar
         currentView={currentView}
         setCurrentView={handleSetView}
-        onAddHabit={() => setIsAddModalOpen(true)}
+        onAddHabit={handleAddHabit}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
@@ -171,7 +181,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
 
             {/* Center Add Button - Modern Style */}
             <button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={handleAddHabit}
               className="relative flex items-center justify-center w-14 h-14 -mt-7 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 active:scale-95 transition-all duration-200 border border-indigo-400/20"
               aria-label="Add new habit"
             >

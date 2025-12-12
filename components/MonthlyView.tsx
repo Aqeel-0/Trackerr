@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useHabits } from "@/contexts/HabitContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   formatDateToString,
   isSameDay,
@@ -42,6 +43,136 @@ interface SortableHabitRowProps {
   getCounter: (habitId: string, date: string) => number;
   isMobileView?: boolean;
   isTabletView?: boolean;
+}
+
+function SortableHabitCard({
+  habit,
+  dates,
+  today,
+  onDelete,
+  toggleCompletion,
+  isHabitCompleted,
+  setCounter,
+  getCounter,
+}: SortableHabitRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: habit.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-white dark:bg-slate-800 p-0 rounded-xl border border-slate-200 dark:border-slate-700 mb-3 shadow-sm overflow-hidden ${isDragging ? "opacity-50 ring-2 ring-indigo-500 z-10 relative" : ""}`}
+    >
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <button
+            {...attributes}
+            {...listeners}
+            className="touch-none text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="12" r="1" /><circle cx="9" cy="5" r="1" /><circle cx="9" cy="19" r="1" />
+              <circle cx="15" cy="12" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="19" r="1" />
+            </svg>
+          </button>
+          <span className="text-xl flex-shrink-0">{habit.icon}</span>
+          <span className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{habit.name}</span>
+        </div>
+        <button
+          onClick={() => onDelete(habit.id, habit.name)}
+          className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 p-1 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-0 divide-x divide-slate-200 dark:divide-slate-700">
+        {dates.map((date, idx) => {
+          const dateString = formatDateToString(date);
+          const isCompleted = isHabitCompleted(habit.id, dateString);
+          const isToday = isSameDay(date, today);
+          const isFuture = date > today && !isToday;
+
+          return (
+            <div
+              key={idx}
+              className={`
+                flex flex-col items-center justify-center py-2.5 relative
+                ${isToday
+                  ? 'bg-indigo-100/70 dark:bg-indigo-900/30'
+                  : ''}
+              `}
+            >
+              <div className="flex items-center justify-center w-full">
+                {habit.trackingType === "checkbox" ? (
+                  <button
+                    onClick={() => !isFuture && toggleCompletion(habit.id, dateString)}
+                    disabled={isFuture}
+                    className={`
+                      w-[22px] h-[22px] rounded-sm flex items-center justify-center transition-all duration-200 border
+                      ${isFuture ? "opacity-20 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-transparent" : "cursor-pointer"}
+                      ${isCompleted
+                        ? "bg-green-600 border-green-600 text-white shadow-sm"
+                        : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600 text-transparent hover:border-slate-300 dark:hover:border-slate-500"
+                      }
+                      ${isToday && !isCompleted ? "ring-2 ring-indigo-500/20 border-indigo-200 dark:border-indigo-800" : ""}
+                    `}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-center h-[22px] w-full gap-0">
+                    <button
+                      onClick={() => !isFuture && getCounter(habit.id, dateString) > 0 && setCounter(habit.id, dateString, getCounter(habit.id, dateString) - 1)}
+                      disabled={isFuture || getCounter(habit.id, dateString) === 0}
+                      className={`w-[14px] h-[22px] flex items-center justify-center font-bold text-xs transition-colors ${isFuture || getCounter(habit.id, dateString) === 0
+                        ? "opacity-20 cursor-not-allowed text-slate-400"
+                        : "cursor-pointer text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-l"
+                        }`}
+                    >
+                      −
+                    </button>
+                    <div className={`
+                      w-[18px] h-[22px] flex items-center justify-center font-mono text-xs
+                      ${isFuture ? "text-slate-300 cursor-not-allowed text-[10px]" : "text-slate-700 dark:text-slate-200"}
+                      ${getCounter(habit.id, dateString) > 0 ? "font-bold" : ""}
+                    `}
+                    >
+                      {getCounter(habit.id, dateString)}
+                    </div>
+                    <button
+                      onClick={() => !isFuture && setCounter(habit.id, dateString, getCounter(habit.id, dateString) + 1)}
+                      disabled={isFuture}
+                      className={`w-[14px] h-[22px] flex items-center justify-center font-bold text-xs transition-colors ${isFuture
+                        ? "opacity-20 cursor-not-allowed text-slate-400"
+                        : "cursor-pointer text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-r"
+                        }`}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function SortableHabitRow({
@@ -126,14 +257,14 @@ function SortableHabitRow({
                   onClick={() => !isFuture && toggleCompletion(habit.id, dateString)}
                   disabled={isFuture}
                   className={`
-                    ${isMobileView ? 'w-6 h-6' : isTabletView ? 'w-5 h-5' : 'w-4 h-4'} flex items-center justify-center transition-all duration-100 rounded-none border
+                    ${isMobileView ? 'w-6 h-6' : isTabletView ? 'w-5 h-5' : 'w-4 h-4'} flex items-center justify-center transition-all duration-100 rounded-sm border
                     ${isFuture
-                      ? "opacity-20 cursor-not-allowed bg-transparent border-gray-400"
+                      ? "opacity-50 cursor-not-allowed bg-transparent border-slate-300 dark:border-slate-600"
                       : "cursor-pointer"
                     }
                     ${isCompleted
-                      ? "bg-green-600 dark:bg-green-500 border-green-600 dark:border-green-500 text-white"
-                      : "bg-transparent border-gray-400 dark:border-gray-500 hover:border-gray-600"
+                      ? "bg-green-600 dark:bg-green-600 border-green-600 dark:border-green-600 text-white shadow-sm"
+                      : "bg-transparent border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500"
                     }
                   `}
                 >
@@ -265,73 +396,122 @@ function CompactWeekView({
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <table className="w-full border-collapse text-xs table-fixed">
-        <colgroup>
-          <col style={{ width: isMobileView ? '22%' : '18%' }} />
-          {weekDates.map((_, idx) => (
-            <col key={idx} style={{ width: isMobileView ? `${78 / numDays}%` : `${82 / numDays}%` }} />
-          ))}
-        </colgroup>
-        <thead className="sticky top-0 z-20">
-          <tr>
-            <th rowSpan={2} className={`border border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
-              Habits
-            </th>
-            {Array.from({ length: Math.ceil(numDays / 7) }).map((_, weekIdx) => {
-              const weekDaysCount = Math.min(7, numDays - weekIdx * 7);
-              return (
-                <th
-                  key={weekIdx}
-                  colSpan={weekDaysCount}
-                  className={`border border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center font-semibold text-[10px] ${getHeaderBg(weekIdx * 7)}`}
-                >
-                  <span className="text-slate-500 dark:text-slate-400">W{weekIdx + 1}</span>
+      <div className={isMobileView ? "px-3 pt-2" : ""}>
+        {isMobileView ? (
+          <>
+            <div className="grid grid-cols-7 divide-x divide-slate-200 dark:divide-slate-700 bg-slate-50 dark:bg-slate-900 sticky top-0 z-20 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm mb-3">
+              {weekDates.map((date, idx) => {
+                const isToday = isSameDay(date, today);
+                return (
+                  <div
+                    key={idx}
+                    className={`
+                      flex flex-col items-center justify-center py-2 h-14 transition-all duration-200 z-0
+                      ${isToday ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none scale-110 z-20 rounded-none mx-0.5' : ''}
+                    `}
+                  >
+                    <span className={`text-[10px] font-bold mb-0.5 ${isToday ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {getDayName(date)}
+                    </span>
+                    <span className={`font-bold leading-tight ${isToday ? 'text-xl text-white' : 'text-xs text-slate-400 dark:text-slate-500'}`}>
+                      {date.getDate()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <SortableContext
+              items={habits.map((h) => h.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="pb-20">
+                {habits.map((habit) => (
+                  <SortableHabitCard
+                    key={habit.id}
+                    habit={habit}
+                    dates={weekDates}
+                    today={today}
+                    getWeekColor={getCellBg}
+                    onDelete={onDelete}
+                    toggleCompletion={toggleCompletion}
+                    isHabitCompleted={isHabitCompleted}
+                    setCounter={setCounter}
+                    getCounter={getCounter}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </>
+        ) : (
+          <table className="w-full border-collapse text-xs table-fixed">
+            <colgroup>
+              <col style={{ width: isMobileView ? '22%' : '18%' }} />
+              {weekDates.map((_, idx) => (
+                <col key={idx} style={{ width: isMobileView ? `${78 / numDays}%` : `${82 / numDays}%` }} />
+              ))}
+            </colgroup>
+            <thead className="sticky top-0 z-20">
+              <tr>
+                <th rowSpan={2} className={`border border-slate-200 dark:border-slate-700 p-1 text-center bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 ${isMobileView ? 'text-[10px]' : 'text-xs'}`}>
+                  Habits
                 </th>
-              );
-            })}
-          </tr>
-          <tr>
-            {weekDates.map((date, idx) => {
-              const isToday = isSameDay(date, today);
-              return (
-                <th
-                  key={idx}
-                  className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${isToday
-                    ? "bg-indigo-500 text-white"
-                    : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
-                    }`}
-                >
-                  <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
-                  <div className={`font-bold ${isMobileView ? 'text-xs' : 'text-sm'}`}>{date.getDate()}</div>
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <SortableContext
-          items={habits.map((h) => h.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <tbody>
-            {habits.map((habit) => (
-              <SortableHabitRow
-                key={habit.id}
-                habit={habit}
-                dates={weekDates}
-                today={today}
-                getWeekColor={getCellBg}
-                onDelete={onDelete}
-                toggleCompletion={toggleCompletion}
-                isHabitCompleted={isHabitCompleted}
-                setCounter={setCounter}
-                getCounter={getCounter}
-                isMobileView={isMobileView}
-                isTabletView={isTabletView}
-              />
-            ))}
-          </tbody>
-        </SortableContext>
-      </table>
+                {Array.from({ length: Math.ceil(numDays / 7) }).map((_, weekIdx) => {
+                  const weekDaysCount = Math.min(7, numDays - weekIdx * 7);
+                  return (
+                    <th
+                      key={weekIdx}
+                      colSpan={weekDaysCount}
+                      className={`border border-slate-200 dark:border-slate-700 py-0.5 px-0 text-center font-semibold text-[10px] ${getHeaderBg(weekIdx * 7)}`}
+                    >
+                      <span className="text-slate-500 dark:text-slate-400">W{weekIdx + 1}</span>
+                    </th>
+                  );
+                })}
+              </tr>
+              <tr>
+                {weekDates.map((date, idx) => {
+                  const isToday = isSameDay(date, today);
+                  return (
+                    <th
+                      key={idx}
+                      className={`border border-slate-200 dark:border-slate-700 py-1.5 px-0.5 text-center ${isToday
+                        ? "bg-indigo-500 text-white"
+                        : `${getHeaderBg(idx)} text-slate-600 dark:text-slate-400`
+                        }`}
+                    >
+                      <div className={`font-medium ${isMobileView ? 'text-[9px]' : 'text-[10px]'}`}>{getDayName(date)}</div>
+                      <div className={`font-bold ${isMobileView ? 'text-xs' : 'text-sm'}`}>{date.getDate()}</div>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <SortableContext
+              items={habits.map((h) => h.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <tbody>
+                {habits.map((habit) => (
+                  <SortableHabitRow
+                    key={habit.id}
+                    habit={habit}
+                    dates={weekDates}
+                    today={today}
+                    getWeekColor={getCellBg}
+                    onDelete={onDelete}
+                    toggleCompletion={toggleCompletion}
+                    isHabitCompleted={isHabitCompleted}
+                    setCounter={setCounter}
+                    getCounter={getCounter}
+                    isMobileView={isMobileView}
+                    isTabletView={isTabletView}
+                  />
+                ))}
+              </tbody>
+            </SortableContext>
+          </table>
+        )}
+      </div>
     </DndContext>
   );
 }
@@ -342,6 +522,7 @@ interface MonthlyViewProps {
 
 export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const { habits, toggleCompletion, isHabitCompleted, deleteHabit, setCounter, getCounter, reorderHabits, isLoading } = useHabits();
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [today, setToday] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
@@ -372,6 +553,31 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
     return () => window.removeEventListener('resize', checkViewMode);
   }, []);
 
+  // Wrapper functions for auth check
+  const handleToggleCompletion = (habitId: string, date: string) => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    toggleCompletion(habitId, date);
+  };
+
+  const handleSetCounter = (habitId: string, date: string, count: number) => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    setCounter(habitId, date, count);
+  };
+
+  const handleDeleteClick = (id: string, name: string) => {
+    if (!user) {
+      window.dispatchEvent(new Event('login-required'));
+      return;
+    }
+    setDeleteModal({ isOpen: true, habitId: id, habitName: name });
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -380,6 +586,7 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!user) return; // Disable reordering for demo
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -407,10 +614,6 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
   const goToCurrentMonth = () => {
     setCurrentDate(new Date());
     setWeekOffset(0);
-  };
-
-  const handleDeleteClick = (id: string, name: string) => {
-    setDeleteModal({ isOpen: true, habitId: id, habitName: name });
   };
 
   const handleConfirmDelete = () => {
@@ -555,9 +758,9 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
             habits={habits}
             weekDates={weekDates}
             today={today}
-            toggleCompletion={toggleCompletion}
+            toggleCompletion={handleToggleCompletion}
             isHabitCompleted={isHabitCompleted}
-            setCounter={setCounter}
+            setCounter={handleSetCounter}
             getCounter={getCounter}
             onDelete={handleDeleteClick}
             reorderHabits={reorderHabits}
@@ -668,9 +871,9 @@ export default function MonthlyView({ onAddHabit }: MonthlyViewProps = {}) {
                     today={today}
                     getWeekColor={getWeekColor}
                     onDelete={handleDeleteClick}
-                    toggleCompletion={toggleCompletion}
+                    toggleCompletion={handleToggleCompletion}
                     isHabitCompleted={isHabitCompleted}
-                    setCounter={setCounter}
+                    setCounter={handleSetCounter}
                     getCounter={getCounter}
                   />
                 ))}
